@@ -1,0 +1,76 @@
+{
+  "brand": {
+    "name": "App Review Insights",
+    "subtitle": "应用评论洞察"
+  },
+  "header": {
+    "phase": "阶段 1 · 项目骨架"
+  },
+  "hero": {
+    "eyebrow": "基于证据的产品洞察与迭代规划",
+    "description": "从真实用户评论出发，建立从用户反馈、产品洞察、产品需求到测试验证的完整证据链。"
+  },
+  "language": {
+    "label": "界面语言",
+    "zhCN": "简体中文",
+    "enUS": "English"
+  },
+  "trace": {
+    "label": "核心可追溯链路",
+    "review": "用户评论",
+    "finding": "洞察发现",
+    "requirement": "产品需求",
+    "testCase": "测试用例"
+  },
+  "system": {
+    "eyebrow": "系统检查",
+    "backendStatus": "后端连接状态",
+    "healthEndpoint": "GET /api/health",
+    "technology": "React + FastAPI",
+    "noPipeline": "当前暂无分析任务"
+  },
+  "connection": {
+    "checking": {
+      "title": "正在连接",
+      "description": "正在请求 {{apiBaseUrl}} 的健康检查接口。"
+    },
+    "connected": {
+      "title": "后端已连接",
+      "description": "{{service}} 已响应，状态为 ok。"
+    },
+    "failed": {
+      "title": "后端连接失败",
+      "description": "无法连接 {{apiBaseUrl}}，请确认后端服务已启动。"
+    }
+  },
+  "terms": {
+    "review": "用户评论",
+    "topic": "主题",
+    "finding": "洞察发现",
+    "evidence": "证据",
+    "supportingEvidence": "支持证据",
+    "conflictingEvidence": "冲突证据",
+    "requirement": "产品需求",
+    "versionPlan": "版本规划",
+    "prd": "PRD",
+    "testCase": "测试用例",
+    "traceability": "可追溯性",
+    "evidenceStrength": "证据强度",
+    "confidence": "置信度",
+    "analysisGoal": "分析目标",
+    "analysisRun": "分析任务"
+  },
+  "findingStatus": {
+    "SUPPORTED": "证据充分",
+    "WEAK": "证据较弱",
+    "CONFLICTED": "存在冲突",
+    "INSUFFICIENT": "证据不足",
+    "UNSUPPORTED": "缺乏支持"
+  },
+  "artifactValidation": {
+    "ACCEPTED": "已接受",
+    "REVISED": "已修订",
+    "REJECTED": "已拒绝",
+    "ASSUMPTION": "假设项"
+  }
+}

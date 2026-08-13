@@ -1267,6 +1267,30 @@ Unlinked Test Cases
 
 ---
 
+## UI-011 — Frontend Internationalization
+
+The frontend UI must support `zh-CN` and `en-US`. The default UI locale is `zh-CN`, and an explicit user selection must persist across page refreshes.
+
+UI locale is independent from the future analysis output language. Changing the interface language must not translate source Reviews, alter generated analysis content, or change any stored/API domain value.
+
+Domain enums remain stable English values at the storage and API layers. Frontend translation resources provide display-only labels, including:
+
+| Stable value | `zh-CN` display label |
+|---|---|
+| `SUPPORTED` | 证据充分 |
+| `WEAK` | 证据较弱 |
+| `CONFLICTED` | 存在冲突 |
+| `INSUFFICIENT` | 证据不足 |
+| `UNSUPPORTED` | 缺乏支持 |
+| `ACCEPTED` | 已接受 |
+| `REVISED` | 已修订 |
+| `REJECTED` | 已拒绝 |
+| `ASSUMPTION` | 假设项 |
+
+Canonical Chinese UI terminology includes `用户评论`, `主题`, `洞察发现`, `证据`, `支持证据`, `冲突证据`, `产品需求`, `版本规划`, `PRD`, `测试用例`, `可追溯性`, `证据强度`, `置信度`, `分析目标`, and `分析任务`.
+
+---
+
 # 8. Non-Functional Requirements
 
 ## NFR-001 — Local Run

@@ -6,4 +6,4 @@ export interface HealthResponse {
 export type ConnectionState =
   | { status: 'checking' }
   | { status: 'connected'; health: HealthResponse }
-  | { status: 'failed'; message: string }
+  | { status: 'failed' }

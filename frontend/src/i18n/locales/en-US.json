@@ -1,0 +1,76 @@
+{
+  "brand": {
+    "name": "App Review Insights",
+    "subtitle": "App review intelligence"
+  },
+  "header": {
+    "phase": "Phase 1 · Shell"
+  },
+  "hero": {
+    "eyebrow": "Evidence-grounded product planning",
+    "description": "Start with authentic user reviews and preserve a complete evidence chain from feedback and findings to product requirements and test validation."
+  },
+  "language": {
+    "label": "Interface language",
+    "zhCN": "简体中文",
+    "enUS": "English"
+  },
+  "trace": {
+    "label": "Core traceability chain",
+    "review": "Review",
+    "finding": "Finding",
+    "requirement": "Requirement",
+    "testCase": "Test Case"
+  },
+  "system": {
+    "eyebrow": "System check",
+    "backendStatus": "Backend Connection Status",
+    "healthEndpoint": "GET /api/health",
+    "technology": "React + FastAPI",
+    "noPipeline": "No analysis pipeline active"
+  },
+  "connection": {
+    "checking": {
+      "title": "Connecting",
+      "description": "Requesting the health endpoint at {{apiBaseUrl}}."
+    },
+    "connected": {
+      "title": "Backend Connected",
+      "description": "{{service}} responded with status ok."
+    },
+    "failed": {
+      "title": "Backend Disconnected",
+      "description": "Unable to reach {{apiBaseUrl}}. Confirm that the backend service is running."
+    }
+  },
+  "terms": {
+    "review": "Review",
+    "topic": "Topic",
+    "finding": "Finding",
+    "evidence": "Evidence",
+    "supportingEvidence": "Supporting Evidence",
+    "conflictingEvidence": "Conflicting Evidence",
+    "requirement": "Requirement",
+    "versionPlan": "Version Plan",
+    "prd": "PRD",
+    "testCase": "Test Case",
+    "traceability": "Traceability",
+    "evidenceStrength": "Evidence Strength",
+    "confidence": "Confidence",
+    "analysisGoal": "Analysis Goal",
+    "analysisRun": "Analysis Run"
+  },
+  "findingStatus": {
+    "SUPPORTED": "Supported",
+    "WEAK": "Weak",
+    "CONFLICTED": "Conflicted",
+    "INSUFFICIENT": "Insufficient",
+    "UNSUPPORTED": "Unsupported"
+  },
+  "artifactValidation": {
+    "ACCEPTED": "Accepted",
+    "REVISED": "Revised",
+    "REJECTED": "Rejected",
+    "ASSUMPTION": "Assumption"
+  }
+}

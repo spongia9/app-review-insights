@@ -1161,6 +1161,14 @@ A single analysis workspace with tabs is also acceptable.
 
 Choose whichever is faster and clearer.
 
+## 16.1 Frontend Localization Boundary
+
+Use `i18next` with `react-i18next` and locale resources under `frontend/src/i18n/`. Supported UI locales are `zh-CN` and `en-US`; `zh-CN` is the default. The user's explicit selection is persisted in browser `localStorage` and restored before the application renders.
+
+`ui_locale` and the future `analysis_output_language` are separate concerns. Phase 1.6 implements only `ui_locale`; later analysis requests may add their own explicit output-language field without deriving it from the interface locale.
+
+Backend/domain enum values and API payloads remain stable English identifiers. Translation occurs only at the React presentation layer through display-label mappings. Locale changes therefore do not mutate domain objects, evidence links, cached artifacts, or traceability validation inputs.
+
 ---
 
 # 17. Priority UI Components

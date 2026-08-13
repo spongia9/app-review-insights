@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { apiBaseUrl } from '../api/client'
 import type { ConnectionState } from '../types/health'
 
@@ -7,23 +9,21 @@ interface BackendStatusProps {
 
 const visualState = {
   checking: {
-    label: 'Checking backend',
     dot: 'bg-[#f2a93b]',
     panel: 'border-[#eadfca] bg-[#fffaf0]',
   },
   connected: {
-    label: 'Backend Connected',
     dot: 'bg-[#16a36a]',
     panel: 'border-[#cbe8dc] bg-[#f0fbf6]',
   },
   failed: {
-    label: 'Backend Unavailable',
     dot: 'bg-[#dc4c4c]',
     panel: 'border-[#efd2d2] bg-[#fff5f5]',
   },
 } as const
 
 export function BackendStatus({ connection }: BackendStatusProps) {
+  const { t } = useTranslation()
   const state = visualState[connection.status]
 
   return (
@@ -41,18 +41,23 @@ export function BackendStatus({ connection }: BackendStatusProps) {
         </span>
 
         <div className="min-w-0">
-          <p className="text-sm font-semibold tracking-[-0.01em] text-[#17304d]">{state.label}</p>
+          <p className="text-sm font-semibold tracking-[-0.01em] text-[#17304d]">
+            {t(`connection.${connection.status}.title`)}
+          </p>
           {connection.status === 'checking' ? (
-            <p className="mt-1 text-sm leading-6 text-[#607187]">Requesting the health endpoint at {apiBaseUrl}.</p>
+            <p className="mt-1 text-sm leading-6 text-[#607187]">
+              {t('connection.checking.description', { apiBaseUrl })}
+            </p>
           ) : null}
           {connection.status === 'connected' ? (
             <p className="mt-1 text-sm leading-6 text-[#526a63]">
-              <span className="font-mono text-xs">{connection.health.service}</span> responded with status{' '}
-              <span className="font-mono text-xs">ok</span>.
+              {t('connection.connected.description', { service: connection.health.service })}
             </p>
           ) : null}
           {connection.status === 'failed' ? (
-            <p className="mt-1 text-sm leading-6 text-[#805b5b]">{connection.message}</p>
+            <p className="mt-1 text-sm leading-6 text-[#805b5b]">
+              {t('connection.failed.description', { apiBaseUrl })}
+            </p>
           ) : null}
         </div>
       </div>

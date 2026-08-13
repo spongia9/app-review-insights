@@ -604,6 +604,14 @@ animation
 
 Do not sacrifice core logic to build decorative animation.
 
+## 17.1 Frontend Internationalization
+
+The frontend UI must support `zh-CN` and `en-US`, with `zh-CN` as the default locale. Persist an explicit user locale selection and restore it on refresh.
+
+UI locale and analysis output language are independent concepts. Do not infer, translate, or mutate generated analysis output merely because the UI locale changes.
+
+Keep domain enums and API/storage values in stable English form. Translate them only through frontend display mappings. In particular, do not localize Finding evidence statuses or generated-artifact validation dispositions in backend models or payloads.
+
 ---
 
 # 18. High-Priority UI Features
@@ -789,11 +797,61 @@ What changed
 Files changed
 Tests run
 Build result
+User configuration required
+APIs / credentials required
+How to run the project
 Known limitations
 Remaining work
 ```
 
 Do not claim success if tests or builds are failing.
+
+## 22.1 User Configuration Handoff
+
+After every development phase or implementation task, explicitly tell the user what they need to configure themselves.
+
+At minimum, report:
+
+```text
+configuration file path
+environment variable name
+whether the value is required now or reserved for a later phase
+where the user obtains the value
+safe example format without a real secret
+```
+
+When an external API or hosted service is used, also report:
+
+```text
+provider / API name
+account or API-key requirement
+where the key is configured
+minimum permissions or scope, when relevant
+whether a paid plan, quota, region, or network requirement may apply
+```
+
+Never print, commit, or ask the user to paste a real secret into a tracked file. Secrets belong in `.env` or another documented untracked environment mechanism. If the current phase requires no new user configuration or API credentials, explicitly state `None` rather than omitting the section.
+
+## 22.2 Run Instructions Handoff
+
+After every development phase or implementation task, provide current, copyable commands for running and verifying the project from a clean local checkout.
+
+The handoff must include, as applicable:
+
+```text
+prerequisite runtime versions
+dependency installation commands
+environment-file setup
+backend start command
+frontend start command
+local URLs
+health or smoke-check command
+test command
+frontend production-build command
+shutdown notes when needed
+```
+
+Commands must reflect the actual repository layout and tools currently configured; do not provide hypothetical commands. Clearly identify the working directory for each command and note Windows-specific command variants when this repository is being developed on Windows.
 
 ---
 
@@ -854,7 +912,9 @@ When beginning work in this repository:
 6. summarize the requested phase;
 7. implement only the requested phase;
 8. run tests/build;
-9. report results.
+9. report results;
+10. report required user configuration and external APIs, even when there are none;
+11. report the current verified project run instructions.
 
 Do not silently reinterpret the assignment.
 
