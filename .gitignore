@@ -23,6 +23,7 @@ dist/
 build/
 coverage/
 .vite/
+.playwright-cli/
 
 # Local databases
 *.db
@@ -35,6 +36,7 @@ tmp/
 temp/
 *.tmp
 *.log
+*.tsbuildinfo
 artifacts/local/
 uploads/
 

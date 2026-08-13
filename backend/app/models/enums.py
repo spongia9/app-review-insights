@@ -1,0 +1,57 @@
+from enum import Enum
+
+
+class StringEnum(str, Enum):
+    """Python 3.9-compatible string enum base."""
+
+
+class AnalysisRunStatus(StringEnum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    WARNING = "WARNING"
+    FAILED = "FAILED"
+
+
+class PipelineStage(StringEnum):
+    NOT_STARTED = "NOT_STARTED"
+    SCOPE_RESOLUTION = "SCOPE_RESOLUTION"
+    DATA_ACQUISITION = "DATA_ACQUISITION"
+    CLEANING_AND_NORMALIZATION = "CLEANING_AND_NORMALIZATION"
+    SEMANTIC_TOPIC_DISCOVERY = "SEMANTIC_TOPIC_DISCOVERY"
+    FINDING_CONSOLIDATION = "FINDING_CONSOLIDATION"
+    EVIDENCE_EVALUATION = "EVIDENCE_EVALUATION"
+    REQUIREMENT_GENERATION = "REQUIREMENT_GENERATION"
+    VERSION_PLANNING = "VERSION_PLANNING"
+    PRD_GENERATION = "PRD_GENERATION"
+    TEST_CASE_GENERATION = "TEST_CASE_GENERATION"
+    TRACEABILITY_VALIDATION = "TRACEABILITY_VALIDATION"
+
+
+class SourceType(StringEnum):
+    APP_STORE = "app_store"
+    CSV = "csv"
+    JSON = "json"
+    CACHED = "cached"
+    DEMO = "demo"
+
+
+class FindingEvidenceStatus(StringEnum):
+    SUPPORTED = "SUPPORTED"
+    WEAK = "WEAK"
+    CONFLICTED = "CONFLICTED"
+    INSUFFICIENT = "INSUFFICIENT"
+    UNSUPPORTED = "UNSUPPORTED"
+
+
+class EvidenceStrength(StringEnum):
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+
+
+class ArtifactValidationStatus(StringEnum):
+    ACCEPTED = "ACCEPTED"
+    REVISED = "REVISED"
+    REJECTED = "REJECTED"
+    ASSUMPTION = "ASSUMPTION"

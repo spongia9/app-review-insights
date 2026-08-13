@@ -1,0 +1,61 @@
+import { apiBaseUrl } from '../api/client'
+import type { ConnectionState } from '../types/health'
+
+interface BackendStatusProps {
+  connection: ConnectionState
+}
+
+const visualState = {
+  checking: {
+    label: 'Checking backend',
+    dot: 'bg-[#f2a93b]',
+    panel: 'border-[#eadfca] bg-[#fffaf0]',
+  },
+  connected: {
+    label: 'Backend Connected',
+    dot: 'bg-[#16a36a]',
+    panel: 'border-[#cbe8dc] bg-[#f0fbf6]',
+  },
+  failed: {
+    label: 'Backend Unavailable',
+    dot: 'bg-[#dc4c4c]',
+    panel: 'border-[#efd2d2] bg-[#fff5f5]',
+  },
+} as const
+
+export function BackendStatus({ connection }: BackendStatusProps) {
+  const state = visualState[connection.status]
+
+  return (
+    <section
+      aria-live="polite"
+      aria-busy={connection.status === 'checking'}
+      className={`rounded-[1.4rem] border p-5 shadow-[0_18px_60px_rgba(17,42,74,0.07)] sm:p-6 ${state.panel}`}
+    >
+      <div className="flex items-start gap-4">
+        <span className="relative mt-1 flex size-3 shrink-0" aria-hidden="true">
+          {connection.status === 'checking' ? (
+            <span className={`absolute inline-flex size-full animate-ping rounded-full opacity-50 ${state.dot}`} />
+          ) : null}
+          <span className={`relative inline-flex size-3 rounded-full ${state.dot}`} />
+        </span>
+
+        <div className="min-w-0">
+          <p className="text-sm font-semibold tracking-[-0.01em] text-[#17304d]">{state.label}</p>
+          {connection.status === 'checking' ? (
+            <p className="mt-1 text-sm leading-6 text-[#607187]">Requesting the health endpoint at {apiBaseUrl}.</p>
+          ) : null}
+          {connection.status === 'connected' ? (
+            <p className="mt-1 text-sm leading-6 text-[#526a63]">
+              <span className="font-mono text-xs">{connection.health.service}</span> responded with status{' '}
+              <span className="font-mono text-xs">ok</span>.
+            </p>
+          ) : null}
+          {connection.status === 'failed' ? (
+            <p className="mt-1 text-sm leading-6 text-[#805b5b]">{connection.message}</p>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  )
+}
