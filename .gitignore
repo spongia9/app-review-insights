@@ -1,0 +1,45 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# JavaScript / frontend
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+
+# Local databases
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+
+# Local runtime and temporary artifacts
+tmp/
+temp/
+*.tmp
+*.log
+artifacts/local/
+uploads/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
