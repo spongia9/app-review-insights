@@ -16,11 +16,7 @@
 
 html {
   min-width: 320px;
-  background:
-    linear-gradient(rgba(23, 91, 216, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(23, 91, 216, 0.035) 1px, transparent 1px),
-    #f4f8fc;
-  background-size: 32px 32px;
+  background: #f4f8fc;
 }
 
 body {

@@ -30,14 +30,14 @@ export function BackendStatus({ connection }: BackendStatusProps) {
     <section
       aria-live="polite"
       aria-busy={connection.status === 'checking'}
-      className={`rounded-[1.4rem] border p-5 shadow-[0_18px_60px_rgba(17,42,74,0.07)] sm:p-6 ${state.panel}`}
+      className={`rounded-xl border p-4 ${state.panel}`}
     >
-      <div className="flex items-start gap-4">
-        <span className="relative mt-1 flex size-3 shrink-0" aria-hidden="true">
+      <div className="flex items-start gap-3">
+        <span className="relative mt-1 flex size-2.5 shrink-0" aria-hidden="true">
           {connection.status === 'checking' ? (
             <span className={`absolute inline-flex size-full animate-ping rounded-full opacity-50 ${state.dot}`} />
           ) : null}
-          <span className={`relative inline-flex size-3 rounded-full ${state.dot}`} />
+          <span className={`relative inline-flex size-2.5 rounded-full ${state.dot}`} />
         </span>
 
         <div className="min-w-0">
@@ -45,17 +45,17 @@ export function BackendStatus({ connection }: BackendStatusProps) {
             {t(`connection.${connection.status}.title`)}
           </p>
           {connection.status === 'checking' ? (
-            <p className="mt-1 text-sm leading-6 text-[#607187]">
+            <p className="mt-1 text-xs leading-5 text-[#607187]">
               {t('connection.checking.description', { apiBaseUrl })}
             </p>
           ) : null}
           {connection.status === 'connected' ? (
-            <p className="mt-1 text-sm leading-6 text-[#526a63]">
+            <p className="mt-1 text-xs leading-5 text-[#526a63]">
               {t('connection.connected.description', { service: connection.health.service })}
             </p>
           ) : null}
           {connection.status === 'failed' ? (
-            <p className="mt-1 text-sm leading-6 text-[#805b5b]">
+            <p className="mt-1 text-xs leading-5 text-[#805b5b]">
               {t('connection.failed.description', { apiBaseUrl })}
             </p>
           ) : null}

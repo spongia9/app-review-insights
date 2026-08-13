@@ -27,47 +27,49 @@ export function HomePage() {
   }, [])
 
   return (
-    <main className="min-h-screen bg-[#f4f8fc] px-4 py-5 text-[#132a46] sm:px-7 sm:py-7 lg:px-10">
-      <div className="mx-auto max-w-[1280px] overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgba(45,81,122,0.11)]">
-        <header className="flex items-center justify-between border-b border-[#dce7f1] px-5 py-4 sm:px-8">
+    <div className="flex min-h-dvh flex-col bg-[#f4f8fc] text-[#132a46]">
+      <header className="border-b border-[#dce7f1] bg-white">
+        <div className="mx-auto flex min-h-16 w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-3 sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-16">
           <div className="flex items-center gap-3">
             <span className="grid size-9 place-items-center rounded-full bg-[#175bd8] font-mono text-xs font-bold text-white">AR</span>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-semibold tracking-[-0.01em]">{t('brand.name')}</p>
               <p className="text-[0.68rem] text-[#728499]">{t('brand.subtitle')}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <LanguageSwitcher />
-            <span className="hidden rounded-full border border-[#d7e3ee] px-3 py-1 font-mono text-[0.68rem] text-[#65778d] sm:inline-flex">
+            <span className="hidden font-mono text-[0.62rem] tracking-[0.08em] text-[#8a9aad] md:inline">
               {t('header.phase2')}
             </span>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <div className="grid gap-7 px-5 py-7 sm:px-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-10 lg:py-10">
-          <section>
-            <div className="mb-7 max-w-2xl">
-              <h1 className="text-3xl font-semibold tracking-[-0.035em] text-[#102943] sm:text-4xl">
+      <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 sm:py-8 md:px-8 lg:px-10 lg:py-10 xl:px-12 2xl:px-16">
+        <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)] lg:gap-10 xl:gap-12">
+          <section className="min-w-0">
+            <div className="mb-6 max-w-2xl sm:mb-7">
+              <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-[#102943] sm:text-[2rem] lg:text-[2.125rem]">
                 {t('analysis.page.title')}
               </h1>
-              <p className="mt-3 text-sm leading-6 text-[#61748a] sm:text-base sm:leading-7">
+              <p className="mt-2.5 max-w-[68ch] text-sm leading-6 text-[#61748a] sm:text-base sm:leading-7">
                 {t('analysis.page.description')}
               </p>
             </div>
             <NewAnalysisForm onComplete={setResult} />
           </section>
 
-          <aside className="lg:pt-[5.9rem]">
-            <div className="mb-3 flex items-end justify-between px-1">
+          <aside className="min-w-0 border-t border-[#dce7f1] pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0 xl:pl-10">
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
               <div>
                 <p className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[#7b8ca0]">{t('system.eyebrow')}</p>
-                <h2 className="mt-1 text-lg font-semibold tracking-[-0.025em]">{t('system.backendStatus')}</h2>
+                <h2 className="mt-1 text-base font-semibold tracking-[-0.02em]">{t('system.backendStatus')}</h2>
               </div>
               <span className="font-mono text-[0.62rem] text-[#8495a8]">{t('system.healthEndpoint')}</span>
             </div>
             <BackendStatus connection={connection} />
-            <div className="mt-5 rounded-2xl bg-[#eef4fa] p-5 text-sm leading-6 text-[#536b83]">
+            <div className="mt-5 border-t border-[#dce7f1] pt-5 text-sm leading-6 text-[#536b83]">
               <p className="font-semibold text-[#294765]">{t('analysis.page.scopeTitle')}</p>
               <p className="mt-1">{t('analysis.page.scopeDescription')}</p>
             </div>
@@ -75,16 +77,18 @@ export function HomePage() {
         </div>
 
         {result ? (
-          <div className="border-t border-[#dce7f1] px-5 py-8 sm:px-8 lg:px-10">
+          <section className="mt-8 border-t border-[#dce7f1] pt-8 lg:mt-10 lg:pt-10">
             <IngestionResults result={result} />
-          </div>
+          </section>
         ) : null}
+      </main>
 
-        <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-[#dce7f1] px-5 py-4 font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[#788a9e] sm:px-8">
+      <footer className="border-t border-[#dce7f1] bg-white">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-2 px-4 py-4 font-mono text-[0.62rem] uppercase tracking-[0.1em] text-[#788a9e] sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-16">
           <span>{t('system.technology')}</span>
           <span>{t('analysis.page.footer')}</span>
-        </footer>
-      </div>
-    </main>
+        </div>
+      </footer>
+    </div>
   )
 }

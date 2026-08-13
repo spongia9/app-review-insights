@@ -12,7 +12,7 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <label className="flex items-center gap-1.5 rounded-full border border-[#d7e3ee] bg-white px-2.5 py-1 text-[#52677f] transition-colors hover:border-[#a9c1d8] focus-within:border-[#175bd8] focus-within:ring-2 focus-within:ring-[#175bd8]/20">
+    <label className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-[#d7e3ee] bg-white px-2.5 py-1 text-[#52677f] transition-colors hover:border-[#a9c1d8] focus-within:border-[#175bd8] focus-within:ring-2 focus-within:ring-[#175bd8]/20">
       <span aria-hidden="true" className="text-sm">
         🌐
       </span>
