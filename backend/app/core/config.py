@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import List, Literal, Optional
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,7 +39,15 @@ class Settings(BaseSettings):
 
     llm_provider: Optional[str] = None
     llm_model: Optional[str] = None
-    llm_api_key: Optional[str] = None
+    llm_api_key: Optional[SecretStr] = None
+    llm_base_url: str = "https://api.deepseek.com"
+    llm_review_batch_size: int = Field(default=25, ge=1, le=200)
+    llm_max_retries: int = Field(default=2, ge=0, le=5)
+    llm_request_timeout_seconds: float = Field(default=120.0, gt=0, le=300)
+    llm_max_output_tokens: int = Field(default=4096, ge=512, le=32768)
+    llm_temperature: float = Field(default=0.2, ge=0, le=2)
+    llm_thinking_enabled: bool = False
+    llm_trust_environment_proxy: bool = False
 
     @field_validator("sqlite_database_path", mode="after")
     @classmethod

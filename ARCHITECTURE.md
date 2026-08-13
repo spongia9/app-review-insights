@@ -654,6 +654,22 @@ topic-to-review relationships
 
 This stage must not depend solely on a fixed taxonomy.
 
+### Phase 3 implementation boundary
+
+`SemanticAnalysisService` partitions the ordered clean Review list into bounded batches and calls one configured `LLMProvider`. The interview implementation supplies `DeepSeekProvider` through an OpenAI-compatible Chat Completions request with JSON Output. Provider JSON is not trusted as a domain object: it is parsed into Pydantic `TopicDiscoveryOutput`, `FindingCandidateOutput`, or `ConsolidatedAnalysisResult` and then checked against deterministic run/batch allowlists.
+
+```text
+List[Review]
+  -> create_review_batches
+  -> TopicDiscoveryOutput per batch
+  -> FindingCandidateOutput per batch
+  -> ConsolidatedAnalysisResult
+```
+
+Only semantic fields needed for the task are serialized to the provider; `raw_data` is excluded. Prompt resources are versionable files under `backend/app/prompts`. Cross-batch consolidation must preserve the union of cited Review IDs and source batch IDs. `FindingCandidate` is stored as `UNVALIDATED_CANDIDATE` and remains separate from the existing final `Finding` domain model.
+
+Analysis Output Language accepts `FOLLOW_UI`, `zh-CN`, or `en-US` and is resolved once when analysis starts; it never mutates the source Review. The service persists each draft stage in the existing run JSON aggregate and updates `current_stage`, `last_successful_stage`, progress, transparency counts, revisions, and failures. Finite correction retries cover provider timeout/error, schema failure, and allowlist failure. Phase 4 alone owns semantic support/conflict/sufficiency validation and final Finding statuses.
+
 If the cleaned dataset does not fit the configured context strategy, use bounded batches and a consolidation pass. Persist `total_review_count`, `analyzed_review_count`, `sampling_strategy`, and `batch_count`. Sampling or truncation is a disclosed limitation, never an implicit implementation detail.
 
 ---

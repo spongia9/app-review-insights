@@ -83,6 +83,16 @@ The user should be able to:
 
 # 4. Mandatory Functional Requirements
 
+## Phase 3 Runtime Semantic Analysis Contract
+
+Phase 3 introduces an Analysis Output Language that is independent from the frontend UI locale. Accepted stored/API values are `FOLLOW_UI`, `zh-CN`, and `en-US`; `FOLLOW_UI` is resolved from the request's UI locale when semantic analysis starts. Original `Review.text` is immutable and is never translated.
+
+Cleaned Reviews are processed in configured batches (`LLM_REVIEW_BATCH_SIZE`, default 25) without sampling. Every batch sends only ID, rating, title, text, version, language, and date. It produces structured, run-scoped `TopicCandidate` and `FindingCandidate` objects. `FindingCandidate` has the fixed Phase 3 disposition `UNVALIDATED_CANDIDATE` and must never be presented as a Phase 4 evidence-validated `Finding`.
+
+Every model response must pass Pydantic schema validation plus deterministic `analysis_run_id`, Review ID, and batch ID allowlist checks. Batch calls may reference only current-batch Reviews. Consolidation may reference only current-run Reviews and source batches, and it must preserve the source Topic/Finding Review-ID lineage. Invalid structured output, timeout, provider failure, or invalid identifiers receive only the configured finite correction retries; exhaustion fails the semantic run without fabricated output.
+
+Persist transparency fields `total_review_count`, `analyzed_review_count`, `batch_count`, `batch_size`, `sampling_strategy`, `model_provider`, `model_name`, `analysis_goal`, `output_language`, and resolved output language. Persist run-scoped topic draft, finding draft, and consolidation draft audit artifacts at stage boundaries. Phase 3 explicitly excludes final evidence status, Requirements, VersionPlan, PRD, TestCases, and final traceability validation.
+
 ## FR-001 — U.S. App Store URL Input
 
 The system must accept a valid U.S. App Store application URL.

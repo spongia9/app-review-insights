@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import type { IngestionResult } from '../types/analysis'
+import { SemanticAnalysisPanel } from './SemanticAnalysisPanel'
 
 interface IngestionResultsProps {
   result: IngestionResult
@@ -107,6 +108,7 @@ export function IngestionResults({ result }: IngestionResultsProps) {
           </tbody>
         </table>
       </div>
+      <SemanticAnalysisPanel ingestion={result} />
     </section>
   )
 }

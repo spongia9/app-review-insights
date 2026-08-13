@@ -5,6 +5,7 @@ from uuid import uuid4
 from app.cleaning import clean_reviews
 from app.core.config import Settings
 from app.models import (
+    AnalysisOutputLanguage,
     AnalysisRun,
     AnalysisRunStatus,
     IngestionResult,
@@ -22,36 +23,52 @@ class IngestionService:
         self.settings = settings
         self.store = store
 
-    def ingest_app_store(self, app_store_url: str, analysis_goal: Optional[str]) -> IngestionResult:
+    def ingest_app_store(
+        self,
+        app_store_url: str,
+        analysis_goal: Optional[str],
+        output_language: AnalysisOutputLanguage = AnalysisOutputLanguage.FOLLOW_UI,
+    ) -> IngestionResult:
         provider = AppStoreProvider(
             app_store_url,
             max_pages=self.settings.app_store_max_pages,
             max_review_rows=self.settings.max_review_rows,
             timeout_seconds=self.settings.app_store_request_timeout_seconds,
         )
-        return self._run(provider, SourceType.APP_STORE, analysis_goal)
+        return self._run(provider, SourceType.APP_STORE, analysis_goal, output_language)
 
-    def ingest_csv(self, data: bytes, analysis_goal: Optional[str]) -> IngestionResult:
+    def ingest_csv(
+        self,
+        data: bytes,
+        analysis_goal: Optional[str],
+        output_language: AnalysisOutputLanguage = AnalysisOutputLanguage.FOLLOW_UI,
+    ) -> IngestionResult:
         provider = CSVProvider(
             data,
             max_upload_bytes=self.settings.max_upload_bytes,
             max_review_rows=self.settings.max_review_rows,
         )
-        return self._run(provider, SourceType.CSV, analysis_goal)
+        return self._run(provider, SourceType.CSV, analysis_goal, output_language)
 
-    def ingest_json(self, data: bytes, analysis_goal: Optional[str]) -> IngestionResult:
+    def ingest_json(
+        self,
+        data: bytes,
+        analysis_goal: Optional[str],
+        output_language: AnalysisOutputLanguage = AnalysisOutputLanguage.FOLLOW_UI,
+    ) -> IngestionResult:
         provider = JSONProvider(
             data,
             max_upload_bytes=self.settings.max_upload_bytes,
             max_review_rows=self.settings.max_review_rows,
         )
-        return self._run(provider, SourceType.JSON, analysis_goal)
+        return self._run(provider, SourceType.JSON, analysis_goal, output_language)
 
     def _run(
         self,
         provider: ReviewProvider,
         source_type: SourceType,
         analysis_goal: Optional[str],
+        output_language: AnalysisOutputLanguage,
     ) -> IngestionResult:
         run_id = f"RUN-{uuid4().hex[:12].upper()}"
         started_at = datetime.now(timezone.utc)
@@ -59,6 +76,12 @@ class IngestionService:
             id=run_id,
             source_type=source_type,
             analysis_goal=analysis_goal,
+            output_language=output_language,
+            resolved_output_language=(
+                output_language
+                if output_language != AnalysisOutputLanguage.FOLLOW_UI
+                else AnalysisOutputLanguage.ZH_CN
+            ),
             status=AnalysisRunStatus.PENDING,
             current_stage=PipelineStage.DATA_ACQUISITION,
             progress=0,

@@ -1,5 +1,12 @@
 import type { HealthResponse } from '../types/health'
-import type { AnalysisSource, IngestionResult } from '../types/analysis'
+import type {
+  AnalysisOutputLanguage,
+  AnalysisRunView,
+  AnalysisSource,
+  FindingCandidatesView,
+  IngestionResult,
+  TopicsView,
+} from '../types/analysis'
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
@@ -63,6 +70,7 @@ function isHealthResponse(value: unknown): value is HealthResponse {
 export async function createAppStoreAnalysis(
   appStoreUrl: string,
   analysisGoal: string,
+  outputLanguage: AnalysisOutputLanguage,
 ): Promise<IngestionResult> {
   return requestIngestion(`${apiBaseUrl}/api/analysis/app-store`, {
     method: 'POST',
@@ -73,6 +81,7 @@ export async function createAppStoreAnalysis(
     body: JSON.stringify({
       app_store_url: appStoreUrl,
       analysis_goal: analysisGoal.trim() || null,
+      output_language: outputLanguage,
     }),
   })
 }
@@ -81,18 +90,73 @@ export async function createFileAnalysis(
   source: Exclude<AnalysisSource, 'app_store'>,
   file: File,
   analysisGoal: string,
+  outputLanguage: AnalysisOutputLanguage,
 ): Promise<IngestionResult> {
   const formData = new FormData()
   formData.append('file', file)
   if (analysisGoal.trim()) {
     formData.append('analysis_goal', analysisGoal.trim())
   }
+  formData.append('output_language', outputLanguage)
 
   return requestIngestion(`${apiBaseUrl}/api/analysis/import/${source}`, {
     method: 'POST',
     headers: { Accept: 'application/json' },
     body: formData,
   })
+}
+
+export async function startSemanticAnalysis(
+  analysisRunId: string,
+  outputLanguage: AnalysisOutputLanguage,
+  uiLanguage: string,
+): Promise<AnalysisRunView> {
+  return requestJson<AnalysisRunView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/semantic`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ output_language: outputLanguage, ui_language: uiLanguage }),
+  })
+}
+
+export async function getAnalysisRun(analysisRunId: string): Promise<AnalysisRunView> {
+  return requestJson<AnalysisRunView>(`${apiBaseUrl}/api/analysis/${analysisRunId}`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  })
+}
+
+export async function getTopics(analysisRunId: string): Promise<TopicsView> {
+  return requestJson<TopicsView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/topics`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  })
+}
+
+export async function getFindingCandidates(analysisRunId: string): Promise<FindingCandidatesView> {
+  return requestJson<FindingCandidatesView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/finding-candidates`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  })
+}
+
+async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
+  let response: Response
+  try {
+    response = await fetch(url, init)
+  } catch {
+    throw new ApiError(`Unable to reach the backend at ${apiBaseUrl}.`)
+  }
+  const payload: unknown = await response.json().catch(() => null)
+  if (!response.ok) {
+    const detail = extractErrorDetail(payload)
+    throw new ApiError(
+      detail.message ?? `Backend request returned HTTP ${response.status}.`,
+      response.status,
+      detail.code ?? 'BACKEND_ERROR',
+      detail.analysis_run_id,
+    )
+  }
+  return payload as T
 }
 
 async function requestIngestion(url: string, init: RequestInit): Promise<IngestionResult> {

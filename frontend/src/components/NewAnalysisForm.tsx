@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError, createAppStoreAnalysis, createFileAnalysis } from '../api/client'
-import type { AnalysisSource, IngestionResult } from '../types/analysis'
+import type { AnalysisOutputLanguage, AnalysisSource, IngestionResult } from '../types/analysis'
 
 interface NewAnalysisFormProps {
   onComplete: (result: IngestionResult) => void
@@ -21,6 +21,7 @@ export function NewAnalysisForm({ onComplete }: NewAnalysisFormProps) {
   const [source, setSource] = useState<AnalysisSource>('app_store')
   const [appStoreUrl, setAppStoreUrl] = useState('')
   const [analysisGoal, setAnalysisGoal] = useState('')
+  const [outputLanguage, setOutputLanguage] = useState<AnalysisOutputLanguage>('FOLLOW_UI')
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<AnalysisFormError | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -48,8 +49,8 @@ export function NewAnalysisForm({ onComplete }: NewAnalysisFormProps) {
     try {
       const result =
         source === 'app_store'
-          ? await createAppStoreAnalysis(appStoreUrl, analysisGoal)
-          : await createFileAnalysis(source, file as File, analysisGoal)
+          ? await createAppStoreAnalysis(appStoreUrl, analysisGoal, outputLanguage)
+          : await createFileAnalysis(source, file as File, analysisGoal, outputLanguage)
       onComplete(result)
     } catch (caughtError) {
       if (caughtError instanceof ApiError) {
@@ -149,6 +150,21 @@ export function NewAnalysisForm({ onComplete }: NewAnalysisFormProps) {
           value={analysisGoal}
         />
         <span className="mt-1 block text-right font-mono text-[0.65rem] text-[#8191a2]">{analysisGoal.length}/1000</span>
+      </label>
+
+      <label className="mt-5 block">
+        <span className="text-sm font-semibold text-[#294765]">{t('analysis.form.outputLanguage')}</span>
+        <select
+          className="mt-2 min-h-11 w-full rounded-xl border border-[#cbd9e7] bg-white px-3.5 py-2.5 text-sm text-[#17304d] outline-none transition-colors focus:border-[#175bd8] focus:ring-2 focus:ring-[#175bd8]/15"
+          data-testid="analysis-output-language"
+          onChange={(event) => setOutputLanguage(event.target.value as AnalysisOutputLanguage)}
+          value={outputLanguage}
+        >
+          <option value="FOLLOW_UI">{t('analysis.outputLanguage.FOLLOW_UI')}</option>
+          <option value="zh-CN">{t('analysis.outputLanguage.zh-CN')}</option>
+          <option value="en-US">{t('analysis.outputLanguage.en-US')}</option>
+        </select>
+        <span className="mt-2 block text-xs leading-5 text-[#708397]">{t('analysis.form.outputLanguageHint')}</span>
       </label>
 
       {error ? (

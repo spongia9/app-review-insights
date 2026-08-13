@@ -1,0 +1,16 @@
+{
+  "reviews": [
+    {"id":"pod-001","rating":2,"title":"Offline download vanished","text":"Downloaded episodes disappear as soon as I enable airplane mode.","version":"4.8.0","language":"en-US","date":"2026-07-21"},
+    {"id":"pod-002","rating":1,"title":"无法离线播放","text":"节目显示已经下载，但断网后点击播放一直转圈。","version":"4.8.0","language":"zh-CN","date":"2026-07-22"},
+    {"id":"pod-003","rating":2,"title":"Queue order changes","text":"Adding one episode to Up Next silently rearranges the rest of my queue.","version":"4.8.1","language":"en-US","date":"2026-07-24"},
+    {"id":"pod-004","rating":3,"title":"播放列表顺序混乱","text":"我手动排好的播放顺序在重启应用后被重新排序。","version":"4.8.1","language":"zh-CN","date":"2026-07-25"},
+    {"id":"pod-005","rating":2,"title":"Transcript drifts","text":"The transcript is several sentences behind after changing playback speed to 1.5x.","version":"4.8.1","language":"en-US","date":"2026-07-26"},
+    {"id":"pod-006","rating":2,"title":"字幕不同步","text":"快进之后文字稿不会跟着当前音频位置更新。","version":"4.8.1","language":"zh-CN","date":"2026-07-27"},
+    {"id":"pod-007","rating":4,"title":"Great discovery, noisy alerts","text":"Recommendations are useful, but I get duplicate notifications for new episodes.","version":"4.8.2","language":"en-US","date":"2026-07-28"},
+    {"id":"pod-008","rating":2,"title":"重复通知","text":"同一期节目每次更新都会收到两到三条相同通知。","version":"4.8.2","language":"zh-CN","date":"2026-07-29"},
+    {"id":"pod-009","rating":1,"title":"Sleep timer ignored","text":"The sleep timer reaches zero but the next episode starts anyway.","version":"4.8.2","language":"en-US","date":"2026-07-30"},
+    {"id":"pod-010","rating":2,"title":"睡眠定时器失效","text":"设置十五分钟后停止，但节目结束后仍自动播放下一集。","version":"4.8.2","language":"zh-CN","date":"2026-07-31"},
+    {"id":"pod-011","rating":3,"title":"Car controls lag","text":"Steering-wheel skip controls take five seconds to respond over Bluetooth.","version":"4.8.2","language":"en-US","date":"2026-08-01"},
+    {"id":"pod-012","rating":2,"title":"车载控制延迟","text":"蓝牙连接汽车后，方向盘切换节目有明显延迟。","version":"4.8.2","language":"zh-CN","date":"2026-08-02"}
+  ]
+}

@@ -5,7 +5,8 @@
   },
   "header": {
     "phase": "Phase 1 · Shell",
-    "phase2": "Phase 2 · Data"
+    "phase2": "Phase 2 · Data",
+    "phase3": "Phase 3 · Semantic analysis"
   },
   "hero": {
     "eyebrow": "Evidence-grounded product planning",
@@ -79,13 +80,13 @@
       "title": "New Analysis",
       "description": "Import authentic or supplied user reviews and run deterministic validation, normalization, cleaning, and deduplication before semantic analysis begins.",
       "scopeTitle": "Current phase scope",
-      "scopeDescription": "This phase processes review data only. It does not run topic discovery, generate findings, or call an LLM.",
-      "footer": "Deterministic review data processing"
+      "scopeDescription": "This phase adds runtime topic discovery and unvalidated Finding Candidates. Evidence status and product artifacts remain out of scope.",
+      "footer": "Runtime semantic review analysis"
     },
     "form": {
       "title": "Analysis input",
       "description": "Choose one data source and optionally describe what this analysis should focus on.",
-      "phase": "DATA",
+      "phase": "DATA + AI",
       "sourceLabel": "Data source",
       "appStoreUrl": "App Store URL",
       "appStorePlaceholder": "https://apps.apple.com/us/app/.../id123456789",
@@ -94,9 +95,43 @@
       "uploadHint": "UTF-8 and UTF-8 BOM are supported. Maximum 10 MiB and 10,000 records.",
       "goal": "Analysis Goal",
       "goalPlaceholder": "For example: Focus on subscription conversion, low ratings, and recent-version usability.",
+      "outputLanguage": "Analysis Output Language",
+      "outputLanguageHint": "Controls generated Topics and Finding Candidates only. Source reviews are never translated.",
       "submit": "Start Processing",
       "processing": "Processing…",
       "failedRun": "Failed run"
+    },
+    "outputLanguage": {
+      "FOLLOW_UI": "Follow UI Language",
+      "zh-CN": "Simplified Chinese",
+      "en-US": "English"
+    },
+    "stages": {
+      "SEMANTIC_TOPIC_DISCOVERY": "Discovering dynamic topics",
+      "FINDING_EXTRACTION": "Extracting Finding Candidates",
+      "TOPIC_CONSOLIDATION": "Consolidating cross-batch topics"
+    },
+    "semantic": {
+      "title": "AI Semantic Analysis",
+      "description": "Use the configured runtime LLM to discover dataset-specific topics and extract unvalidated user-problem candidates with source Review IDs.",
+      "start": "Start AI Semantic Analysis",
+      "starting": "Starting…",
+      "topics": "Dynamic Topics",
+      "findings": "Finding Candidates",
+      "unvalidated": "Unvalidated candidates",
+      "viewReviews": "View source reviews ({{count}})",
+      "noGoal": "No explicit goal",
+      "info": {
+        "analyzed": "Reviews analyzed",
+        "batches": "Batches",
+        "model": "Model",
+        "language": "Output language",
+        "goal": "Analysis goal"
+      },
+      "errors": {
+        "start": "Semantic analysis could not be started.",
+        "poll": "Semantic analysis status could not be refreshed."
+      }
     },
     "sources": {
       "app_store": "App Store",

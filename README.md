@@ -66,7 +66,57 @@ The GitHub project should preserve a complete commit history to show the candida
 - Provide a sample environment file or equivalent configuration instructions, but do not include API keys or other secrets.
 - A non-runnable document-only submission is not acceptable.
 
-## Current Implementation Notes — Phase 2
+## Current Implementation Notes — Phase 3
+
+Phase 3 adds runtime, model-driven semantic analysis after deterministic ingestion and cleaning. The configured DeepSeek model receives bounded batches of normalized Review fields plus the optional analysis goal. It dynamically discovers dataset-specific Topics, extracts structured `FindingCandidate` user problems, and performs a model-driven cross-batch consolidation. These are explicitly unvalidated candidates; Phase 4 evidence support/conflict/sufficiency evaluation is not implemented yet.
+
+### Runtime LLM configuration
+
+Configure the untracked project-root `.env`:
+
+```text
+LLM_PROVIDER=deepseek
+LLM_MODEL=deepseek-v4-flash
+LLM_BASE_URL=https://api.deepseek.com
+LLM_API_KEY=<your DeepSeek API key>
+LLM_REVIEW_BATCH_SIZE=25
+LLM_MAX_RETRIES=2
+LLM_REQUEST_TIMEOUT_SECONDS=120
+LLM_MAX_OUTPUT_TOKENS=4096
+LLM_TEMPERATURE=0.2
+LLM_THINKING_ENABLED=false
+LLM_TRUST_ENVIRONMENT_PROXY=false
+```
+
+Obtain the key from the DeepSeek platform. The key is loaded as a secret and is never logged. JSON Output is requested from DeepSeek, the expected Pydantic JSON Schema is included in each prompt, and every response is validated again locally. `LLM_TRUST_ENVIRONMENT_PROXY=false` avoids inheriting broken system proxy settings; set it to `true` only when the local network requires a correctly configured proxy.
+
+### Prompt and batching strategy
+
+Prompts live in `backend/app/prompts/`: `topic_discovery.md`, `finding_candidate.md`, and `topic_consolidation.md`. They require generated text in the resolved Analysis Output Language and prohibit fabricated reviews/IDs, requirements, PRDs, version plans, test cases, and final evidence claims.
+
+All cleaned reviews are analyzed in deterministic ordered batches of `LLM_REVIEW_BATCH_SIZE`; Phase 3 does not sample (`sampling_strategy=NONE`). Only Review ID, rating, title, text, version, language, and date are sent—never `raw_data`. Batch responses may cite only the current batch; consolidation may cite only the current run and must preserve the union of source Review IDs and batch IDs. Invalid JSON/schema, invalid IDs, timeouts, and retryable provider failures receive at most `LLM_MAX_RETRIES` correction retries.
+
+### Language and transparency
+
+UI locale and Analysis Output Language are independent. The request supports `FOLLOW_UI`, `zh-CN`, and `en-US`; source `Review.text` is never translated or modified. The run records total/analyzed reviews, batch size/count, sampling strategy, provider/model, analysis goal, selected/resolved output language, stage progress, revisions, errors, and run-scoped topic/finding/consolidation audit artifacts.
+
+### Phase 3 limitations
+
+- `FindingCandidate` is `UNVALIDATED_CANDIDATE`, not the final `Finding` model.
+- No semantic support/conflict/sufficiency validation or final evidence status is produced.
+- A single FastAPI worker runs background tasks in-process; process restarts can interrupt an active model request, while prior persisted stage output remains inspectable.
+- DeepSeek API availability, account quota, regional/network access, and model behavior are external dependencies.
+- Requirement, VersionPlan, PRD, TestCase, and final traceability generation remain unimplemented.
+
+Run the real-model smoke test without exposing the key:
+
+```powershell
+cd backend
+$env:PYTHONDONTWRITEBYTECODE='1'
+.\.venv\Scripts\python.exe scripts\real_llm_smoke.py
+```
+
+## Phase 2 Data Foundation
 
 The current application implements deterministic review ingestion and cleaning for three inputs: a U.S. App Store URL, CSV upload, and JSON upload. All three produce the same run-scoped `Review` model before any semantic analysis. Phase 2 does not call an LLM.
 
@@ -127,7 +177,7 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-Open `http://127.0.0.1:5173`. The health endpoint is `http://127.0.0.1:8000/api/health`. Run backend tests with `backend\.venv\Scripts\python.exe -m pytest` from `backend/`, and build the frontend with `npm.cmd run build` from `frontend/`.
+Open `http://127.0.0.1:5173`. The health endpoint is `http://127.0.0.1:8000/api/health`. Run backend tests with `.\.venv\Scripts\python.exe -m pytest` from `backend/`, and build the frontend with `npm.cmd run build` from `frontend/`.
 
 ## Evaluation Criteria
 

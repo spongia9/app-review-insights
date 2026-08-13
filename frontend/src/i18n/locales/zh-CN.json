@@ -5,7 +5,8 @@
   },
   "header": {
     "phase": "阶段 1 · 项目骨架",
-    "phase2": "阶段 2 · 数据处理"
+    "phase2": "阶段 2 · 数据处理",
+    "phase3": "阶段 3 · 语义分析"
   },
   "hero": {
     "eyebrow": "基于证据的产品洞察与迭代规划",
@@ -79,13 +80,13 @@
       "title": "新建分析",
       "description": "导入真实或自备的用户评论，执行确定性校验、规范化、清洗和去重，为后续语义分析建立可信数据基础。",
       "scopeTitle": "本阶段处理范围",
-      "scopeDescription": "当前仅处理评论数据，不执行主题发现、洞察生成或任何 LLM 调用。",
-      "footer": "确定性评论数据处理"
+      "scopeDescription": "当前加入运行时主题发现和未经验证的洞察候选；证据状态与产品产物仍不在本阶段范围内。",
+      "footer": "运行时评论语义分析"
     },
     "form": {
       "title": "分析输入",
       "description": "选择一种数据来源，并可补充本次分析关注的目标。",
-      "phase": "DATA",
+      "phase": "DATA + AI",
       "sourceLabel": "数据来源",
       "appStoreUrl": "App Store 链接",
       "appStorePlaceholder": "https://apps.apple.com/us/app/.../id123456789",
@@ -94,9 +95,43 @@
       "uploadHint": "支持 UTF-8 / UTF-8 BOM，文件最大 10 MiB，最多 10,000 条记录。",
       "goal": "分析目标",
       "goalPlaceholder": "例如：重点分析订阅转化、低评分评论和最近版本的使用体验。",
+      "outputLanguage": "分析结果语言",
+      "outputLanguageHint": "仅控制主题和洞察候选的生成语言，不翻译或修改原始评论。",
       "submit": "开始处理",
       "processing": "正在处理…",
       "failedRun": "失败任务"
+    },
+    "outputLanguage": {
+      "FOLLOW_UI": "跟随界面语言",
+      "zh-CN": "简体中文",
+      "en-US": "English"
+    },
+    "stages": {
+      "SEMANTIC_TOPIC_DISCOVERY": "正在发现动态主题",
+      "FINDING_EXTRACTION": "正在提取洞察候选",
+      "TOPIC_CONSOLIDATION": "正在合并跨批次主题"
+    },
+    "semantic": {
+      "title": "AI语义分析",
+      "description": "使用运行时 LLM 动态发现当前数据集的主题，并提取保留真实评论 ID、尚未完成证据验证的用户问题候选。",
+      "start": "开始 AI 语义分析",
+      "starting": "正在启动…",
+      "topics": "动态主题",
+      "findings": "洞察候选",
+      "unvalidated": "未经验证的候选",
+      "viewReviews": "查看原始评论（{{count}}）",
+      "noGoal": "未设置分析目标",
+      "info": {
+        "analyzed": "分析评论数",
+        "batches": "Batch 数量",
+        "model": "模型",
+        "language": "分析结果语言",
+        "goal": "分析目标"
+      },
+      "errors": {
+        "start": "无法启动语义分析。",
+        "poll": "无法刷新语义分析状态。"
+      }
     },
     "sources": {
       "app_store": "App Store",

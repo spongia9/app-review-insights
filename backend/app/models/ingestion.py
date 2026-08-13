@@ -6,6 +6,7 @@ from pydantic import Field
 from app.models.analysis_run import AnalysisRun
 from app.models.base import DomainModel, RunScopedModel
 from app.models.review import Review
+from app.models.semantic import SemanticAnalysisResult, SemanticAnalysisSummary
 
 
 class RejectedReview(DomainModel):
@@ -38,12 +39,14 @@ class IngestionResult(RunScopedModel):
     statistics: Optional[CleaningStatistics] = None
     reviews: List[Review] = Field(default_factory=list)
     rejected_rows: List[RejectedReview] = Field(default_factory=list)
+    semantic_analysis: Optional[SemanticAnalysisResult] = None
 
 
 class AnalysisRunView(RunScopedModel):
     run: AnalysisRun
     provider: ProviderMetadata
     statistics: Optional[CleaningStatistics] = None
+    semantic_analysis: Optional[SemanticAnalysisSummary] = None
 
 
 class ReviewsView(RunScopedModel):
