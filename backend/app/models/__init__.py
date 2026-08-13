@@ -8,6 +8,14 @@ from app.models.enums import (
     SourceType,
 )
 from app.models.finding import Finding
+from app.models.ingestion import (
+    AnalysisRunView,
+    CleaningStatistics,
+    IngestionResult,
+    ProviderMetadata,
+    RejectedReview,
+    ReviewsView,
+)
 from app.models.prd import PRDSection, StructuredPRD
 from app.models.requirement import Requirement
 from app.models.review import Review
@@ -17,15 +25,21 @@ from app.models.version_plan import VersionPlan, VersionPlanItem
 
 __all__ = [
     "AnalysisRun",
+    "AnalysisRunView",
     "AnalysisRunStatus",
     "ArtifactValidationStatus",
     "EvidenceStrength",
     "Finding",
     "FindingEvidenceStatus",
+    "CleaningStatistics",
+    "IngestionResult",
     "PipelineStage",
     "PRDSection",
+    "ProviderMetadata",
+    "RejectedReview",
     "Requirement",
     "Review",
+    "ReviewsView",
     "SourceType",
     "StructuredPRD",
     "TestCase",

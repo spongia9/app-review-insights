@@ -66,6 +66,69 @@ The GitHub project should preserve a complete commit history to show the candida
 - Provide a sample environment file or equivalent configuration instructions, but do not include API keys or other secrets.
 - A non-runnable document-only submission is not acceptable.
 
+## Current Implementation Notes — Phase 2
+
+The current application implements deterministic review ingestion and cleaning for three inputs: a U.S. App Store URL, CSV upload, and JSON upload. All three produce the same run-scoped `Review` model before any semantic analysis. Phase 2 does not call an LLM.
+
+### App Store source and limitations
+
+Live collection uses Apple's storefront-specific public customer-review RSS JSON feed:
+
+```text
+https://itunes.apple.com/us/rss/customerreviews/page={page}/id={app_id}/sortby=mostrecent/json
+```
+
+The provider accepts only `https://apps.apple.com/us/app/.../id{numeric_id}` input, requests the `us` feed, and records `source`, `storefront`, `collection_time`, and `source_limitations`. This is not visible-page HTML scraping. The public RSS feed is not documented as a stable API, may change or become unavailable, exposes only recent feed pages, and can be affected by network/rate limits. A failure is reported explicitly; the application never fabricates reviews or silently substitutes sample data.
+
+### CSV contract
+
+CSV must use UTF-8 or UTF-8 with BOM and include a header. `text` is required. Canonical fields are `id`, `title`, `text`, `rating`, `version`, `author`, `date`, `language`, `app_id`, and `storefront`. Documented aliases are:
+
+```text
+id <- review_id | source_review_id
+text <- review | review_text | content | body | comment
+title <- review_title
+rating <- score | stars | star_rating
+version <- app_version | review_version
+author <- user | username | reviewer
+date <- created_at | review_date
+language <- lang | locale
+app_id <- application_id
+storefront <- country | country_code | store
+```
+
+### JSON contract
+
+JSON must use UTF-8 and be either an array of review objects or exactly `{ "reviews": [...] }`. Review objects use the same canonical fields and aliases as CSV. Arbitrary top-level wrappers are rejected.
+
+### Limits and deterministic cleaning
+
+Defaults are 10 MiB per upload and 10,000 records, configurable with `MAX_UPLOAD_BYTES` and `MAX_REVIEW_ROWS`. Cleaning collapses whitespace without changing meaning, normalizes optional strings/language/date/rating, rejects empty text and invalid typed fields, retains `raw_data`, and assigns stable run-local IDs such as `R000001`. Deduplication first uses `(source, source_review_id)`; records without a source ID use a SHA-256 fingerprint of normalized title, text, and rating. No embeddings, semantic similarity, or LLM deduplication are used.
+
+`sample_data/` contains clearly labeled synthetic sample files for development and offline verification. They are not live or cached App Store results.
+
+### Local run
+
+Use Python 3.9+ and Node.js 20+.
+
+```powershell
+# project root
+Copy-Item .env.example .env
+
+# backend
+cd backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# frontend (another terminal, from project root)
+cd frontend
+npm.cmd install
+npm.cmd run dev
+```
+
+Open `http://127.0.0.1:5173`. The health endpoint is `http://127.0.0.1:8000/api/health`. Run backend tests with `backend\.venv\Scripts\python.exe -m pytest` from `backend/`, and build the frontend with `npm.cmd run build` from `frontend/`.
+
 ## Evaluation Criteria
 
 This assessment focuses on whether the candidate can turn real user reviews into an executable product plan. The evaluation will mainly consider:

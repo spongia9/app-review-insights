@@ -326,6 +326,24 @@ storefront <- country | country_code | store
 
 The default safety limits are 10 MiB and 10,000 parsed records. Enforce bytes before unbounded parsing and records during parsing. Reject over-limit inputs explicitly; never silently truncate them. All limits may be overridden only through documented configuration.
 
+## 6.3 Phase 2 Provider and Cleaning Flow
+
+```text
+AppStoreProvider / CSVProvider / JSONProvider
+                    ↓
+              ProviderBatch
+                    ↓
+        shared deterministic cleaner
+                    ↓
+    List[Review] + CleaningStatistics
+                    ↓
+        SQLite run-scoped JSON record
+```
+
+`AppStoreProvider` parses only U.S. `apps.apple.com` URLs and fetches Apple's public `itunes.apple.com/us/rss/customerreviews/.../json` feed. The storefront is encoded in the request path and persisted as `us`; provider failure never falls back to sample data. RSS page limits, schema stability, availability, and network/rate-limit constraints are recorded as source limitations.
+
+The shared cleaner owns normalization, row validation, internal ID allocation, and deduplication. Providers do not embed source-specific behavior downstream. Deduplication by source identity precedes the normalized title/text/rating fingerprint. SQLite persistence intentionally stores the complete validated Phase 2 result as JSON in a minimal `analysis_runs` table; an ORM and migration framework remain deferred.
+
 ---
 
 # 7. Domain Models
@@ -1081,6 +1099,18 @@ CSV or JSON
 ```
 
 The import result should create or feed an analysis run.
+
+Phase 2 implements the compact contract as:
+
+```http
+POST /api/analysis/app-store
+POST /api/analysis/import/csv
+POST /api/analysis/import/json
+GET  /api/analysis/{analysis_run_id}
+GET  /api/analysis/{analysis_run_id}/reviews
+```
+
+Creation endpoints return the complete ingestion result for the minimal synchronous Phase 2 UI. The two GET endpoints keep run status/statistics and cleaned Review retrieval explicit without fragmenting the API into source-specific result endpoints.
 
 ---
 

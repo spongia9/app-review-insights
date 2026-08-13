@@ -1,0 +1,24 @@
+{
+  "reviews": [
+    {
+      "id": "sample-json-001",
+      "title": "Helpful plan",
+      "text": "The weekly plan keeps my workouts organized.",
+      "rating": 5,
+      "version": "3.2.0",
+      "author": "Taylor",
+      "date": "2026-07-18T10:00:00Z",
+      "language": "en"
+    },
+    {
+      "id": "sample-json-002",
+      "title": "需要更清楚的说明",
+      "text": "订阅确认前需要更清楚地说明试用期和价格。",
+      "rating": 2,
+      "version": "3.2.0",
+      "author": "示例用户",
+      "date": "2026-07-19T11:00:00Z",
+      "language": "zh-CN"
+    }
+  ]
+}

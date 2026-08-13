@@ -727,6 +727,14 @@ maximum parsed records: 10,000
 
 Limits may be configurable downward or upward through documented environment settings. The API must enforce the byte limit before unbounded parsing and enforce the record limit during parsing. An over-limit upload is rejected with a clear error; it must not be silently truncated.
 
+### Phase 2 Deterministic Processing Contract
+
+All providers expose the same provider boundary and return run-scoped `List[Review]` after the shared cleaner. App Store collection uses the `us` customer-review RSS JSON feed rather than visible-page HTML. CSV accepts UTF-8/UTF-8 BOM; JSON accepts UTF-8. Other encodings and uncontrolled JSON wrappers are rejected explicitly.
+
+Cleaning normalizes whitespace and optional fields without changing review meaning, validates rating/date values, preserves raw source records where practical, assigns sequential `R000001`-style IDs within the current `analysis_run_id`, and reports structured statistics. Deduplication uses `(source, source_review_id)` when present; otherwise it uses a deterministic normalized title/text/rating fingerprint.
+
+Phase 2 persists the resulting `AnalysisRun`, provider provenance, statistics, rejected-row audit, and cleaned Reviews in SQLite. It stops at `CLEANING_AND_NORMALIZATION` and must not report future semantic stages as completed.
+
 ---
 
 ## FR-024 — Mandatory Semantic Evidence Validation

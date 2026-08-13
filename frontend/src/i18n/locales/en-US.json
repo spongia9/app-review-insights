@@ -4,7 +4,8 @@
     "subtitle": "App review intelligence"
   },
   "header": {
-    "phase": "Phase 1 · Shell"
+    "phase": "Phase 1 · Shell",
+    "phase2": "Phase 2 · Data"
   },
   "hero": {
     "eyebrow": "Evidence-grounded product planning",
@@ -72,5 +73,76 @@
     "REVISED": "Revised",
     "REJECTED": "Rejected",
     "ASSUMPTION": "Assumption"
+  },
+  "analysis": {
+    "page": {
+      "title": "New Analysis",
+      "description": "Import authentic or supplied user reviews and run deterministic validation, normalization, cleaning, and deduplication before semantic analysis begins.",
+      "scopeTitle": "Current phase scope",
+      "scopeDescription": "This phase processes review data only. It does not run topic discovery, generate findings, or call an LLM.",
+      "footer": "Deterministic review data processing"
+    },
+    "form": {
+      "title": "Analysis input",
+      "description": "Choose one data source and optionally describe what this analysis should focus on.",
+      "phase": "DATA",
+      "sourceLabel": "Data source",
+      "appStoreUrl": "App Store URL",
+      "appStorePlaceholder": "https://apps.apple.com/us/app/.../id123456789",
+      "csvFile": "Upload CSV",
+      "jsonFile": "Upload JSON",
+      "uploadHint": "UTF-8 and UTF-8 BOM are supported. Maximum 10 MiB and 10,000 records.",
+      "goal": "Analysis Goal",
+      "goalPlaceholder": "For example: Focus on subscription conversion, low ratings, and recent-version usability.",
+      "submit": "Start Processing",
+      "processing": "Processing…",
+      "failedRun": "Failed run"
+    },
+    "sources": {
+      "app_store": "App Store",
+      "csv": "CSV",
+      "json": "JSON"
+    },
+    "results": {
+      "title": "Data Ingestion Result",
+      "storefront": "Storefront",
+      "limitations": "Source limitations and warnings"
+    },
+    "statistics": {
+      "raw_review_count": "Raw reviews",
+      "clean_review_count": "Valid reviews",
+      "duplicate_count": "Duplicates",
+      "invalid_count": "Invalid reviews",
+      "retention_rate": "Retention rate"
+    },
+    "table": {
+      "rating": "Rating",
+      "title": "Title",
+      "text": "Review",
+      "version": "Version",
+      "language": "Language",
+      "date": "Date",
+      "source": "Source"
+    },
+    "status": {
+      "COMPLETED": "Completed",
+      "WARNING": "Completed with warnings",
+      "FAILED": "Failed",
+      "RUNNING": "Running",
+      "PENDING": "Pending"
+    },
+    "errors": {
+      "FILE_REQUIRED": "Choose a file to upload.",
+      "INVALID_APP_STORE_URL": "Enter a valid U.S. App Store URL.",
+      "APP_STORE_COLLECTION_FAILED": "App Store collection failed. Check the network and try again.",
+      "INVALID_CSV": "The CSV file is invalid. Check its encoding, headers, and rows.",
+      "INVALID_JSON": "The JSON file is invalid. Check its documented structure.",
+      "INVALID_IMPORT_SCHEMA": "The file is missing the required text field or a supported alias.",
+      "AMBIGUOUS_IMPORT_SCHEMA": "The file contains conflicting field aliases.",
+      "FILE_TOO_LARGE": "The file exceeds the 10 MiB upload limit.",
+      "TOO_MANY_REVIEWS": "The file exceeds the 10,000-review limit.",
+      "NO_VALID_REVIEWS": "No valid reviews remained after cleaning.",
+      "BACKEND_ERROR": "The backend request failed. Confirm the service is running and try again."
+    }
   }
 }

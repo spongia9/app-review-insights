@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.analysis import router as analysis_router
 from app.api.health import router as health_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.services import IngestionService
+from app.storage import RunStore
 
 
 def create_app() -> FastAPI:
@@ -21,7 +24,12 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    run_store = RunStore(settings.sqlite_database_path)
+    run_store.initialize()
+    application.state.run_store = run_store
+    application.state.ingestion_service = IngestionService(settings, run_store)
     application.include_router(health_router, prefix=settings.api_prefix)
+    application.include_router(analysis_router, prefix=settings.api_prefix)
     return application
 
 

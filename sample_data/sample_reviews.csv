@@ -1,0 +1,7 @@
+id,title,text,rating,version,author,date,language
+sample-001,Clear progress,The progress screen makes each step easy to understand.,5,3.2.0,Avery,2026-07-10T09:30:00Z,en
+sample-002,Subscription explanation,"Please explain the trial price before I confirm payment.",2,3.2.0,Jordan,2026-07-12T14:15:00Z,en
+sample-003,Workout controls,"The pause button is hard to reach during a workout.",3,3.1.5,Sam,2026-07-15T18:05:00Z,en
+sample-003,Workout controls,"The pause button is hard to reach during a workout.",3,3.1.5,Sam,2026-07-15T18:05:00Z,en
+,空白记录,"   ",4,3.2.0,示例用户,2026-07-16T08:00:00Z,zh-CN
+,Invalid rating,The content is present but the rating is invalid.,8,3.2.0,Example,2026-07-17T08:00:00Z,en

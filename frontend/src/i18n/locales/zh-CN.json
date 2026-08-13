@@ -4,7 +4,8 @@
     "subtitle": "应用评论洞察"
   },
   "header": {
-    "phase": "阶段 1 · 项目骨架"
+    "phase": "阶段 1 · 项目骨架",
+    "phase2": "阶段 2 · 数据处理"
   },
   "hero": {
     "eyebrow": "基于证据的产品洞察与迭代规划",
@@ -72,5 +73,76 @@
     "REVISED": "已修订",
     "REJECTED": "已拒绝",
     "ASSUMPTION": "假设项"
+  },
+  "analysis": {
+    "page": {
+      "title": "新建分析",
+      "description": "导入真实或自备的用户评论，执行确定性校验、规范化、清洗和去重，为后续语义分析建立可信数据基础。",
+      "scopeTitle": "本阶段处理范围",
+      "scopeDescription": "当前仅处理评论数据，不执行主题发现、洞察生成或任何 LLM 调用。",
+      "footer": "确定性评论数据处理"
+    },
+    "form": {
+      "title": "分析输入",
+      "description": "选择一种数据来源，并可补充本次分析关注的目标。",
+      "phase": "DATA",
+      "sourceLabel": "数据来源",
+      "appStoreUrl": "App Store 链接",
+      "appStorePlaceholder": "https://apps.apple.com/us/app/.../id123456789",
+      "csvFile": "上传 CSV",
+      "jsonFile": "上传 JSON",
+      "uploadHint": "支持 UTF-8 / UTF-8 BOM，文件最大 10 MiB，最多 10,000 条记录。",
+      "goal": "分析目标",
+      "goalPlaceholder": "例如：重点分析订阅转化、低评分评论和最近版本的使用体验。",
+      "submit": "开始处理",
+      "processing": "正在处理…",
+      "failedRun": "失败任务"
+    },
+    "sources": {
+      "app_store": "App Store",
+      "csv": "CSV",
+      "json": "JSON"
+    },
+    "results": {
+      "title": "数据获取结果",
+      "storefront": "店面",
+      "limitations": "来源限制与警告"
+    },
+    "statistics": {
+      "raw_review_count": "原始评论",
+      "clean_review_count": "有效评论",
+      "duplicate_count": "重复评论",
+      "invalid_count": "无效评论",
+      "retention_rate": "保留率"
+    },
+    "table": {
+      "rating": "评分",
+      "title": "标题",
+      "text": "评论内容",
+      "version": "版本",
+      "language": "语言",
+      "date": "日期",
+      "source": "来源"
+    },
+    "status": {
+      "COMPLETED": "已完成",
+      "WARNING": "已完成，有警告",
+      "FAILED": "失败",
+      "RUNNING": "处理中",
+      "PENDING": "等待中"
+    },
+    "errors": {
+      "FILE_REQUIRED": "请选择需要上传的文件。",
+      "INVALID_APP_STORE_URL": "请输入有效的美国区 App Store 链接。",
+      "APP_STORE_COLLECTION_FAILED": "App Store 评论采集失败，请稍后重试并检查网络。",
+      "INVALID_CSV": "CSV 文件格式无效，请检查编码、表头和数据行。",
+      "INVALID_JSON": "JSON 文件格式无效，请检查文档结构。",
+      "INVALID_IMPORT_SCHEMA": "文件缺少必需的 text 字段或受支持的字段别名。",
+      "AMBIGUOUS_IMPORT_SCHEMA": "文件包含相互冲突的字段别名。",
+      "FILE_TOO_LARGE": "文件超过允许的 10 MiB 限制。",
+      "TOO_MANY_REVIEWS": "评论记录数量超过 10,000 条限制。",
+      "NO_VALID_REVIEWS": "清洗后没有可用的有效评论。",
+      "BACKEND_ERROR": "后端请求失败，请确认服务正常后重试。"
+    }
   }
 }

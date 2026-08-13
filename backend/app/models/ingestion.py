@@ -1,0 +1,50 @@
+from datetime import datetime
+from typing import List, Optional
+
+from pydantic import Field
+
+from app.models.analysis_run import AnalysisRun
+from app.models.base import DomainModel, RunScopedModel
+from app.models.review import Review
+
+
+class RejectedReview(DomainModel):
+    row_number: int = Field(ge=1)
+    code: str = Field(min_length=1)
+    message: str = Field(min_length=1)
+
+
+class ProviderMetadata(RunScopedModel):
+    source: str = Field(min_length=1)
+    storefront: Optional[str] = None
+    collection_time: datetime
+    source_limitations: List[str] = Field(default_factory=list)
+    is_live_collection: bool = False
+    storefront_verified: bool = False
+
+
+class CleaningStatistics(RunScopedModel):
+    raw_review_count: int = Field(ge=0)
+    clean_review_count: int = Field(ge=0)
+    duplicate_count: int = Field(ge=0)
+    invalid_count: int = Field(ge=0)
+    empty_count: int = Field(ge=0)
+    retention_rate: float = Field(ge=0, le=1)
+
+
+class IngestionResult(RunScopedModel):
+    run: AnalysisRun
+    provider: ProviderMetadata
+    statistics: Optional[CleaningStatistics] = None
+    reviews: List[Review] = Field(default_factory=list)
+    rejected_rows: List[RejectedReview] = Field(default_factory=list)
+
+
+class AnalysisRunView(RunScopedModel):
+    run: AnalysisRun
+    provider: ProviderMetadata
+    statistics: Optional[CleaningStatistics] = None
+
+
+class ReviewsView(RunScopedModel):
+    reviews: List[Review] = Field(default_factory=list)

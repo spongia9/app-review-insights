@@ -24,6 +24,8 @@ build/
 coverage/
 .vite/
 .playwright-cli/
+output/playwright/*
+!output/playwright/.gitkeep
 
 # Local databases
 *.db
@@ -36,6 +38,7 @@ tmp/
 temp/
 *.tmp
 *.log
+*.whl
 *.tsbuildinfo
 artifacts/local/
 uploads/

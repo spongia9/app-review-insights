@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import List, Literal, Optional
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,10 +32,19 @@ class Settings(BaseSettings):
         ]
     )
     sqlite_database_path: Path = PROJECT_ROOT / "backend" / "data" / "app-review-insights.db"
+    max_upload_bytes: int = Field(default=10 * 1024 * 1024, ge=1024)
+    max_review_rows: int = Field(default=10_000, ge=1)
+    app_store_max_pages: int = Field(default=5, ge=1, le=10)
+    app_store_request_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
 
     llm_provider: Optional[str] = None
     llm_model: Optional[str] = None
     llm_api_key: Optional[str] = None
+
+    @field_validator("sqlite_database_path", mode="after")
+    @classmethod
+    def resolve_database_path(cls, value: Path) -> Path:
+        return value if value.is_absolute() else PROJECT_ROOT / value
 
     @property
     def allowed_cors_origins(self) -> List[str]:
