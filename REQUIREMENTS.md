@@ -99,6 +99,72 @@ If a schema-valid consolidation omits source Review lineage, the deterministic v
 
 Persist transparency fields `total_review_count`, `analyzed_review_count`, `batch_count`, `batch_size`, `sampling_strategy`, `model_provider`, `model_name`, `analysis_goal`, `output_language`, and resolved output language. Persist run-scoped topic draft, finding draft, and consolidation draft audit artifacts at stage boundaries. Phase 3 explicitly excludes final evidence status, Requirements, VersionPlan, PRD, TestCases, and final traceability validation.
 
+## Phase 4 Evidence Grounding Contract
+
+Phase 4 preserves three separate layers:
+
+```text
+FindingCandidate (UNVALIDATED_CANDIDATE)
+  -> EvidenceValidationAudit
+  -> Finding
+```
+
+Before any semantic call, deterministic validation must reject a Candidate belonging to another run, a Review ID absent from the current run, an ID owned only by another run, or duplicate Review references. Invalid identifiers never enter semantic validation.
+
+The runtime LLM must return structured `EvidenceJudgment` objects for every Review in each validation batch. Stored/API stance values are fixed English enums:
+
+```text
+SUPPORTS
+CONFLICTS
+NEUTRAL
+IRRELEVANT
+```
+
+Each judgment contains `analysis_run_id`, `finding_candidate_id`, `review_id`, `stance`, `semantic_relevance`, and a reason in the resolved Analysis Output Language. The returned Review-ID set must equal the batch allowlist exactly. Rating alone cannot determine stance. A `SUPPORTS` or `CONFLICTS` judgment below `EVIDENCE_SEMANTIC_RELEVANCE_THRESHOLD` is deterministically reclassified as `IRRELEVANT` with a revision record.
+
+Conflict discovery must validate all Candidate evidence and may extend the pool with Reviews from overlapping model-derived Topic lineage and same-Topic Candidates. Additional conflict candidates are bounded by `EVIDENCE_CONFLICT_POOL_MAX_REVIEWS`; Candidate evidence itself is never truncated. Reviews are processed in `EVIDENCE_BATCH_SIZE` batches. The implementation must not perform an uncontrolled `Finding × all Reviews` scan.
+
+The default deterministic status rules are:
+
+```text
+UNSUPPORTED  support_count == 0
+INSUFFICIENT 0 < support_count < EVIDENCE_MIN_RELEVANT_REVIEWS
+CONFLICTED   support_count and conflict_count both meet the material minimum,
+             and conflict_ratio meets EVIDENCE_CONFLICT_RATIO_THRESHOLD
+SUPPORTED    support_count meets EVIDENCE_SUPPORTED_MIN_COUNT,
+             support_ratio meets EVIDENCE_SUPPORTED_MIN_RATIO,
+             and average support relevance meets the relevance threshold
+WEAK         valid support exists but none of the stronger rules pass
+```
+
+The code-derived metrics are:
+
+```text
+directional_count = support_count + conflict_count
+support_ratio = support_count / directional_count
+conflict_ratio = conflict_count / directional_count
+evidence_density = directional_count / validated_review_count
+sample_factor = min(1, directional_count / EVIDENCE_CONFIDENCE_SAMPLE_CAP)
+
+confidence = clamp(
+  0.40 * average_support_relevance
+  + 0.30 * support_ratio
+  + 0.20 * sample_factor
+  + 0.10 * evidence_density
+  - 0.20 * conflict_ratio,
+  0,
+  1
+)
+```
+
+After the formula, deterministic status-specific caps must prevent a sparse or refuted conclusion from displaying strong confidence solely because a few judgments agree. Default caps are `0.69` for `WEAK`, `0.74` for `CONFLICTED`, `0.45` for `INSUFFICIENT`, and `0.20` for `UNSUPPORTED`; all caps are configurable.
+
+Model-provided confidence is never used as final confidence. `HIGH` Evidence Strength requires a `SUPPORTED` Finding plus the configured high sample/confidence thresholds. `MEDIUM` requires an eligible supported/weak/conflicted status, the configured minimum directional sample, and the medium confidence threshold. All other cases are `LOW`.
+
+Uncertainty text must state actual calculated evidence conditions. Finding limitations may include only current-run source limitations, confirmed storefront scope, validation-pool coverage, configured pool bounding, and actual missing metadata. Unsupported Candidates and their judgments remain in the audit, their Finding is marked `UNSUPPORTED`, and they are ineligible for future Requirement generation by default.
+
+Provider timeout, invalid structured output, invalid IDs, and provider failure use the existing finite retry policy. Exhaustion produces `FAILED`, preserves Reviews, Phase 3 Candidates, and completed audit work, and never fabricates a validated Finding for the failed Candidate. Phase 4 explicitly excludes Requirement, VersionPlan, PRD, TestCase, and final traceability generation.
+
 ## FR-001 — U.S. App Store URL Input
 
 The system must accept a valid U.S. App Store application URL.

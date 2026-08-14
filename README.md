@@ -66,9 +66,76 @@ The GitHub project should preserve a complete commit history to show the candida
 - Provide a sample environment file or equivalent configuration instructions, but do not include API keys or other secrets.
 - A non-runnable document-only submission is not acceptable.
 
-## Current Implementation Notes — Phase 3
+## Current Implementation Notes — Phase 4
 
-Phase 3 adds runtime, model-driven semantic analysis after deterministic ingestion and cleaning. The configured DeepSeek model receives bounded batches of normalized Review fields plus the optional analysis goal. It dynamically discovers dataset-specific Topics, extracts structured `FindingCandidate` user problems, and performs a model-driven cross-batch consolidation. These are explicitly unvalidated candidates; Phase 4 evidence support/conflict/sufficiency evaluation is not implemented yet.
+Phase 4 converts preserved `FindingCandidate` objects into separate validated `Finding` objects. It first rejects unknown, duplicate, or cross-run Review references with deterministic code. The configured runtime LLM then classifies each in-scope Review against the exact candidate claim as `SUPPORTS`, `CONFLICTS`, `NEUTRAL`, or `IRRELEVANT`. Only validated `SUPPORTS` and `CONFLICTS` records enter the final Finding evidence lists; every judgment remains available in a run-scoped `EvidenceValidationAudit`.
+
+Conflict discovery is bounded rather than `Finding × all Reviews`: it always validates every candidate Review, then adds Reviews from overlapping model-derived Topic lineage and same-Topic Finding Candidates up to `EVIDENCE_CONFLICT_POOL_MAX_REVIEWS`. Reviews are sent in batches of `EVIDENCE_BATCH_SIZE`. Source `Review.text` and the Phase 3 candidate are never overwritten.
+
+### Evidence status and confidence
+
+The model does not assign final confidence or status. Code calculates:
+
+```text
+directional_count = support_count + conflict_count
+support_ratio = support_count / directional_count
+conflict_ratio = conflict_count / directional_count
+evidence_density = directional_count / validated_review_count
+
+confidence = clamp(
+  0.40 * average_support_relevance
+  + 0.30 * support_ratio
+  + 0.20 * sample_factor
+  + 0.10 * evidence_density
+  - 0.20 * conflict_ratio,
+  0,
+  1
+)
+```
+
+With the default configuration, zero support is `UNSUPPORTED`; one supporting Review is `INSUFFICIENT`; material evidence on both sides is `CONFLICTED`; at least four supports, a support ratio of at least 0.70, and sufficient semantic relevance is `SUPPORTED`; remaining supported claims are `WEAK`. `HIGH`, `MEDIUM`, and `LOW` Evidence Strength are derived from status, sample volume, and calculated confidence. The thresholds are centralized in environment configuration and tested.
+
+After the formula, deterministic status caps calibrate conclusion confidence so a tiny, unsupported, insufficient, or materially conflicted sample cannot display strong confidence merely because its few judgments are internally consistent. Default caps are 0.69 for `WEAK`, 0.74 for `CONFLICTED`, 0.45 for `INSUFFICIENT`, and 0.20 for `UNSUPPORTED`.
+
+Final Findings expose supporting/conflicting Reviews, status, confidence, Evidence Strength, evidence-derived uncertainty, and only limitations actually present in the run. Unsupported candidates remain in the audit and are marked ineligible for future Requirement generation. Phase 4 does not generate Requirements, a VersionPlan, PRD, TestCases, or final traceability output.
+
+The full Phase 4 verification record is in [`docs/PHASE4_ACCEPTANCE.md`](docs/PHASE4_ACCEPTANCE.md).
+
+### Phase 4 configuration
+
+The existing DeepSeek settings are reused. Optional deterministic evidence settings are documented in `.env.example`:
+
+```text
+EVIDENCE_BATCH_SIZE=20
+EVIDENCE_CONFLICT_POOL_MAX_REVIEWS=60
+EVIDENCE_SEMANTIC_RELEVANCE_THRESHOLD=0.55
+EVIDENCE_MIN_RELEVANT_REVIEWS=2
+EVIDENCE_SUPPORTED_MIN_COUNT=4
+EVIDENCE_SUPPORTED_MIN_RATIO=0.70
+EVIDENCE_CONFLICT_MIN_COUNT=2
+EVIDENCE_CONFLICT_RATIO_THRESHOLD=0.30
+EVIDENCE_HIGH_STRENGTH_MIN_COUNT=8
+EVIDENCE_HIGH_STRENGTH_MIN_CONFIDENCE=0.80
+EVIDENCE_MEDIUM_STRENGTH_MIN_CONFIDENCE=0.55
+EVIDENCE_CONFIDENCE_SAMPLE_CAP=10
+EVIDENCE_WEAK_CONFIDENCE_CAP=0.69
+EVIDENCE_CONFLICTED_CONFIDENCE_CAP=0.74
+EVIDENCE_INSUFFICIENT_CONFIDENCE_CAP=0.45
+EVIDENCE_UNSUPPORTED_CONFIDENCE_CAP=0.20
+```
+
+Run the real evidence smoke against a persisted Phase 3 run without printing the API key:
+
+```powershell
+cd backend
+$env:PYTHONDONTWRITEBYTECODE='1'
+.\.venv\Scripts\python.exe scripts\real_evidence_smoke.py <RUN_ID> `
+  --candidate-id <FC_ID> --candidate-id <FC_ID>
+```
+
+## Phase 3 Semantic Analysis Foundation
+
+Phase 3 adds runtime, model-driven semantic analysis after deterministic ingestion and cleaning. The configured DeepSeek model receives bounded batches of normalized Review fields plus the optional analysis goal. It dynamically discovers dataset-specific Topics, extracts structured `FindingCandidate` user problems, and performs a model-driven cross-batch consolidation. These remain explicitly unvalidated candidates; Phase 4 consumes them without overwriting them and stores validation audits and final Findings separately.
 
 The final runtime acceptance evidence is recorded in [`docs/PHASE3_ACCEPTANCE.md`](docs/PHASE3_ACCEPTANCE.md).
 
@@ -105,10 +172,9 @@ The provider records safe diagnostics for `finish_reason`, token usage, JSON par
 
 UI locale and Analysis Output Language are independent. The request supports `FOLLOW_UI`, `zh-CN`, and `en-US`; source `Review.text` is never translated or modified. The run records total/analyzed reviews, batch size/count, sampling strategy, provider/model, analysis goal, selected/resolved output language, stage progress, revisions, errors, and run-scoped topic/finding/consolidation audit artifacts.
 
-### Phase 3 limitations
+### Phase 3 boundary
 
-- `FindingCandidate` is `UNVALIDATED_CANDIDATE`, not the final `Finding` model.
-- No semantic support/conflict/sufficiency validation or final evidence status is produced.
+- `FindingCandidate` remains `UNVALIDATED_CANDIDATE`, not the final `Finding` model; Phase 4 produces separate validation and Finding records.
 - A single FastAPI worker runs background tasks in-process; process restarts can interrupt the active request, while completed batch work and completed consolidation rounds remain resumable.
 - DeepSeek API availability, account quota, regional/network access, and model behavior are external dependencies.
 - Requirement, VersionPlan, PRD, TestCase, and final traceability generation remain unimplemented.

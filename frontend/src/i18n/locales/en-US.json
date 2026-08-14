@@ -6,7 +6,8 @@
   "header": {
     "phase": "Phase 1 · Shell",
     "phase2": "Phase 2 · Data",
-    "phase3": "Phase 3 · Semantic analysis"
+    "phase3": "Phase 3 · Semantic analysis",
+    "phase4": "Phase 4 · Evidence validation"
   },
   "hero": {
     "eyebrow": "Evidence-grounded product planning",
@@ -80,8 +81,8 @@
       "title": "New Analysis",
       "description": "Import authentic or supplied user reviews and run deterministic validation, normalization, cleaning, and deduplication before semantic analysis begins.",
       "scopeTitle": "Current phase scope",
-      "scopeDescription": "This phase adds runtime topic discovery and unvalidated Finding Candidates. Evidence status and product artifacts remain out of scope.",
-      "footer": "Runtime semantic review analysis"
+      "scopeDescription": "This phase covers runtime topic discovery, Finding Candidates, and evidence validation. Requirements, PRDs, and Test Cases remain out of scope.",
+      "footer": "Runtime semantic analysis and evidence validation"
     },
     "form": {
       "title": "Analysis input",
@@ -109,7 +110,10 @@
     "stages": {
       "SEMANTIC_TOPIC_DISCOVERY": "Discovering dynamic topics",
       "FINDING_EXTRACTION": "Extracting Finding Candidates",
-      "TOPIC_CONSOLIDATION": "Consolidating cross-batch topics"
+      "TOPIC_CONSOLIDATION": "Consolidating cross-batch topics",
+      "EVIDENCE_VALIDATION": "Validating Review IDs and run scope",
+      "CONFLICT_ANALYSIS": "Evaluating supporting and conflicting evidence",
+      "FINDING_FINALIZATION": "Finalizing validated Findings"
     },
     "semantic": {
       "title": "AI Semantic Analysis",
@@ -131,7 +135,11 @@
         "LLM_AUTHENTICATION_FAILED": "The model provider rejected the configured API credentials. Check LLM_API_KEY and retry.",
         "LLM_TIMEOUT": "The model request timed out. Retry from the checkpoint later.",
         "LLM_PROVIDER_ERROR": "The model request failed. Check provider status, quota, and network access.",
-        "LINEAGE_LOSS": "The consolidated result did not preserve the complete Review lineage and was rejected."
+        "LINEAGE_LOSS": "The consolidated result did not preserve the complete Review lineage and was rejected.",
+        "INVALID_REVIEW_ID": "The model returned a Review ID outside the current Analysis Run and the result was rejected.",
+        "CROSS_RUN_REFERENCE": "A cross-run reference was detected and the evidence chain was rejected.",
+        "INCOMPLETE_EVIDENCE_OUTPUT": "The model did not return a judgment for every Review in the current batch.",
+        "INVALID_STRUCTURED_OUTPUT": "The model repeatedly returned output that did not match the evidence contract."
       },
       "topics": "Dynamic Topics",
       "findings": "Finding Candidates",
@@ -148,6 +156,42 @@
       "errors": {
         "start": "Semantic analysis could not be started.",
         "poll": "Semantic analysis status could not be refreshed."
+      }
+    },
+    "evidence": {
+      "title": "Evidence Validation and Final Findings",
+      "description": "The runtime model judges each Review against the candidate claim. Deterministic rules then calculate support, conflict, sufficiency, confidence, and evidence strength.",
+      "start": "Start Evidence Validation",
+      "starting": "Starting…",
+      "completed": "Evidence Validation Completed",
+      "uncertainty": "Uncertainty",
+      "limitations": "Data and method limitations",
+      "stanceLabel": "Evidence stance",
+      "reason": "Reason",
+      "noEvidence": "No valid evidence of this type was found.",
+      "info": {
+        "findings": "Candidates validated",
+        "reviews": "Reviews involved",
+        "batches": "Validation batches",
+        "model": "Validation model"
+      },
+      "view": {
+        "supporting": "View supporting evidence ({{count}})",
+        "conflicting": "View conflicting evidence ({{count}})"
+      },
+      "stance": {
+        "SUPPORTS": "Supports",
+        "CONFLICTS": "Conflicts",
+        "NEUTRAL": "Neutral",
+        "IRRELEVANT": "Irrelevant"
+      },
+      "strength": {
+        "HIGH": "High",
+        "MEDIUM": "Medium",
+        "LOW": "Low"
+      },
+      "errors": {
+        "start": "Evidence validation could not be started."
       }
     },
     "sources": {

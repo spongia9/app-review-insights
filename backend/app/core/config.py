@@ -50,6 +50,23 @@ class Settings(BaseSettings):
     llm_thinking_enabled: bool = False
     llm_trust_environment_proxy: bool = False
 
+    evidence_batch_size: int = Field(default=20, ge=1, le=100)
+    evidence_conflict_pool_max_reviews: int = Field(default=60, ge=1, le=500)
+    evidence_semantic_relevance_threshold: float = Field(default=0.55, ge=0, le=1)
+    evidence_min_relevant_reviews: int = Field(default=2, ge=1, le=100)
+    evidence_supported_min_count: int = Field(default=4, ge=1, le=100)
+    evidence_supported_min_ratio: float = Field(default=0.70, ge=0, le=1)
+    evidence_conflict_min_count: int = Field(default=2, ge=1, le=100)
+    evidence_conflict_ratio_threshold: float = Field(default=0.30, ge=0, le=1)
+    evidence_high_strength_min_count: int = Field(default=8, ge=1, le=500)
+    evidence_high_strength_min_confidence: float = Field(default=0.80, ge=0, le=1)
+    evidence_medium_strength_min_confidence: float = Field(default=0.55, ge=0, le=1)
+    evidence_confidence_sample_cap: int = Field(default=10, ge=1, le=100)
+    evidence_weak_confidence_cap: float = Field(default=0.69, ge=0, le=1)
+    evidence_conflicted_confidence_cap: float = Field(default=0.74, ge=0, le=1)
+    evidence_insufficient_confidence_cap: float = Field(default=0.45, ge=0, le=1)
+    evidence_unsupported_confidence_cap: float = Field(default=0.20, ge=0, le=1)
+
     @field_validator("sqlite_database_path", mode="after")
     @classmethod
     def resolve_database_path(cls, value: Path) -> Path:

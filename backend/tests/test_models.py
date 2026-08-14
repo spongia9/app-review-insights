@@ -58,6 +58,27 @@ def finding_payload() -> Dict[str, Any]:
         "status": "WEAK",
         "uncertainty": "The sample is small.",
         "limitations": ["Single supporting review"],
+        "validation_metadata": {
+            "analysis_run_id": RUN_ID,
+            "audit_id": "EVA-001",
+            "finding_candidate_id": "FC-001",
+            "metrics": {
+                "validated_review_count": 1,
+                "relevant_review_count": 1,
+                "support_count": 1,
+                "conflict_count": 0,
+                "neutral_count": 0,
+                "irrelevant_count": 0,
+                "support_ratio": 1,
+                "conflict_ratio": 0,
+                "evidence_density": 1,
+                "average_support_relevance": 0.9,
+            },
+            "validated_review_count": 1,
+            "batch_count": 1,
+            "eligible_for_requirement_generation": False,
+            "validation_time": datetime(2026, 8, 14, tzinfo=timezone.utc),
+        },
     }
 
 

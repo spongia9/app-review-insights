@@ -6,11 +6,25 @@ from app.models.enums import (
     AuditArtifactType,
     CandidateStatus,
     EvidenceStrength,
+    EvidenceStance,
     FindingEvidenceStatus,
     PipelineStage,
     SourceType,
 )
+from app.models.evidence import (
+    EvidenceJudgment,
+    EvidenceJudgmentOutput,
+    EvidenceMetrics,
+    EvidenceValidationAudit,
+    EvidenceValidationBatch,
+    FindingValidationMetadata,
+)
 from app.models.finding import Finding
+from app.models.evidence_result import (
+    EvidenceValidationResult,
+    EvidenceValidationSummary,
+    FindingsView,
+)
 from app.models.ingestion import (
     AnalysisRunView,
     CleaningStatistics,
@@ -53,11 +67,21 @@ __all__ = [
     "CandidateStatus",
     "ConsolidatedAnalysisResult",
     "EvidenceStrength",
+    "EvidenceStance",
+    "EvidenceJudgment",
+    "EvidenceJudgmentOutput",
+    "EvidenceMetrics",
+    "EvidenceValidationAudit",
+    "EvidenceValidationBatch",
+    "EvidenceValidationResult",
+    "EvidenceValidationSummary",
     "Finding",
     "FindingCandidate",
     "FindingCandidateOutput",
     "FindingCandidatesView",
     "FindingEvidenceStatus",
+    "FindingValidationMetadata",
+    "FindingsView",
     "CleaningStatistics",
     "IngestionResult",
     "PipelineStage",

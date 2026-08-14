@@ -399,6 +399,7 @@ class Finding(BaseModel):
 
     uncertainty: str | None
     limitations: list[str]
+    validation_metadata: FindingValidationMetadata
 ```
 
 Recommended statuses:
@@ -410,6 +411,43 @@ CONFLICTED
 INSUFFICIENT
 UNSUPPORTED
 ```
+
+Phase 4 additionally persists:
+
+```text
+EvidenceJudgment
+  analysis_run_id
+  finding_candidate_id
+  review_id
+  stance
+  semantic_relevance
+  reason
+
+EvidenceValidationAudit
+  id
+  analysis_run_id
+  finding_candidate_id
+  candidate_review_ids
+  validation_review_ids
+  supporting_review_ids
+  conflicting_review_ids
+  neutral_review_ids
+  irrelevant_review_ids
+  judgments
+  validation_batches
+  status
+  confidence
+  evidence_strength
+  uncertainty
+  limitations
+  model_provider
+  model_name
+  validation_time
+  revisions
+  errors
+```
+
+`FindingValidationMetadata` links the final Finding back to its Candidate and audit and stores deterministic metrics, validated Review/batch counts, validation time, and downstream eligibility. Pydantic validators enforce count/list equality, unique/disjoint support/conflict IDs, and run-scope agreement.
 
 ---
 
@@ -745,6 +783,50 @@ validated findings
 status
 confidence/evidence strength
 ```
+
+### Phase 4 implementation
+
+Phase 4 keeps the existing aggregate SQLite persistence strategy and adds three separate run-scoped layers:
+
+```text
+FindingCandidate
+  -> EvidenceValidationAudit
+  -> Finding
+```
+
+`EvidenceValidationService` first validates every Candidate reference against the current run. A Review ID absent from the current run is rejected before an LLM call; when it exists only in another stored run it is reported as a cross-run reference. The service then builds a bounded validation pool from all Candidate Review IDs plus additional Reviews found through overlapping model-derived Topic lineage and same-Topic Finding Candidates. Only the additional pool is capped; Candidate evidence is never truncated.
+
+```text
+candidate evidence
+  + bounded model-derived Topic pool
+  -> create_evidence_batches(EVIDENCE_BATCH_SIZE)
+  -> runtime EvidenceJudgmentOutput
+  -> exact current-run/current-batch ID validation
+  -> deterministic stance partitions and metrics
+  -> Finding + EvidenceValidationAudit
+```
+
+The provider returns one `EvidenceJudgment` per allowed Review with `SUPPORTS`, `CONFLICTS`, `NEUTRAL`, or `IRRELEVANT`, semantic relevance, and a short reason. It does not return final status or confidence. Low-relevance directional judgments are deterministically moved to `IRRELEVANT` with a revision. Supporting, conflicting, neutral, and irrelevant sets are unique, disjoint, and exactly cover the validated pool.
+
+Code calculates support/conflict ratios, evidence density, average support relevance, a bounded sample factor, confidence, status, and Evidence Strength from centralized configuration. The confidence formula is:
+
+```text
+clamp(
+  0.40 * average_support_relevance
+  + 0.30 * support_ratio
+  + 0.20 * sample_factor
+  + 0.10 * evidence_density
+  - 0.20 * conflict_ratio,
+  0,
+  1
+)
+```
+
+The calculated value is then calibrated with a deterministic status cap: `WEAK <= 0.69`, `CONFLICTED <= 0.74`, `INSUFFICIENT <= 0.45`, and `UNSUPPORTED <= 0.20` by default. These values are configuration, not model output. This prevents a tiny but internally consistent evidence set from appearing highly reliable.
+
+Uncertainty is assembled from the actual status/count/ratio outcome. Limitations are derived only from provider provenance, storefront scope, evidence-pool coverage/bounding, and actual missing metadata. `UNSUPPORTED` Candidates remain visible in the audit and their final Finding is not eligible for downstream Requirement generation. Phase 5 remains responsible for any Requirement decision.
+
+The real progress stages are `EVIDENCE_VALIDATION`, `CONFLICT_ANALYSIS`, and `FINDING_FINALIZATION`. Each completed Candidate audit is persisted. A provider or structured-output failure preserves Reviews, Phase 3 Candidates, and any completed audit work; it never creates a Finding for the failed Candidate.
 
 ---
 
@@ -1099,6 +1181,15 @@ GET /api/analysis/{run_id}/traceability
 ```
 
 Do not create dozens of micro-endpoints unless necessary.
+
+Phase 4 extends the compact API with:
+
+```http
+POST /api/analysis/{analysis_run_id}/evidence
+GET  /api/analysis/{analysis_run_id}/findings
+```
+
+The POST queues in-process validation and accepts an optional run-scoped Candidate ID subset for smoke testing; the normal UI omits it and validates all Candidates. The existing aggregate run endpoint exposes evidence progress/summary for polling. The Findings endpoint returns final Findings plus their EvidenceValidationAudit records so the UI can display original Reviews, stance, and reason without recomputing semantic meaning in React.
 
 ---
 

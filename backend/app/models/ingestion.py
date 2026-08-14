@@ -7,6 +7,7 @@ from app.models.analysis_run import AnalysisRun
 from app.models.base import DomainModel, RunScopedModel
 from app.models.review import Review
 from app.models.semantic import SemanticAnalysisResult, SemanticAnalysisSummary
+from app.models.evidence_result import EvidenceValidationResult, EvidenceValidationSummary
 
 
 class RejectedReview(DomainModel):
@@ -40,6 +41,7 @@ class IngestionResult(RunScopedModel):
     reviews: List[Review] = Field(default_factory=list)
     rejected_rows: List[RejectedReview] = Field(default_factory=list)
     semantic_analysis: Optional[SemanticAnalysisResult] = None
+    evidence_validation: Optional[EvidenceValidationResult] = None
 
 
 class AnalysisRunView(RunScopedModel):
@@ -47,6 +49,7 @@ class AnalysisRunView(RunScopedModel):
     provider: ProviderMetadata
     statistics: Optional[CleaningStatistics] = None
     semantic_analysis: Optional[SemanticAnalysisSummary] = None
+    evidence_validation: Optional[EvidenceValidationSummary] = None
 
 
 class ReviewsView(RunScopedModel):

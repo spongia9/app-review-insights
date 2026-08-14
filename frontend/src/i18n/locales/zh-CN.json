@@ -6,7 +6,8 @@
   "header": {
     "phase": "阶段 1 · 项目骨架",
     "phase2": "阶段 2 · 数据处理",
-    "phase3": "阶段 3 · 语义分析"
+    "phase3": "阶段 3 · 语义分析",
+    "phase4": "阶段 4 · 证据验证"
   },
   "hero": {
     "eyebrow": "基于证据的产品洞察与迭代规划",
@@ -80,8 +81,8 @@
       "title": "新建分析",
       "description": "导入真实或自备的用户评论，执行确定性校验、规范化、清洗和去重，为后续语义分析建立可信数据基础。",
       "scopeTitle": "本阶段处理范围",
-      "scopeDescription": "当前加入运行时主题发现和未经验证的洞察候选；证据状态与产品产物仍不在本阶段范围内。",
-      "footer": "运行时评论语义分析"
+      "scopeDescription": "当前覆盖运行时主题发现、洞察候选与证据验证；产品需求、PRD 和测试用例仍不在本阶段范围内。",
+      "footer": "运行时语义分析与证据验证"
     },
     "form": {
       "title": "分析输入",
@@ -109,7 +110,10 @@
     "stages": {
       "SEMANTIC_TOPIC_DISCOVERY": "正在发现动态主题",
       "FINDING_EXTRACTION": "正在提取洞察候选",
-      "TOPIC_CONSOLIDATION": "正在合并跨批次主题"
+      "TOPIC_CONSOLIDATION": "正在合并跨批次主题",
+      "EVIDENCE_VALIDATION": "正在验证评论 ID 与运行范围",
+      "CONFLICT_ANALYSIS": "正在判断支持与冲突证据",
+      "FINDING_FINALIZATION": "正在生成最终洞察"
     },
     "semantic": {
       "title": "AI语义分析",
@@ -131,7 +135,11 @@
         "LLM_AUTHENTICATION_FAILED": "模型服务拒绝了当前 API 凭据，请检查 LLM_API_KEY 后重试。",
         "LLM_TIMEOUT": "模型请求超时，请稍后从检查点重试。",
         "LLM_PROVIDER_ERROR": "模型服务请求失败，请检查服务状态、额度或网络。",
-        "LINEAGE_LOSS": "合并结果未完整保留评论证据链，系统已拒绝该结果。"
+        "LINEAGE_LOSS": "合并结果未完整保留评论证据链，系统已拒绝该结果。",
+        "INVALID_REVIEW_ID": "模型返回了当前分析任务之外的评论 ID，系统已拒绝该结果。",
+        "CROSS_RUN_REFERENCE": "检测到跨分析任务引用，系统已拒绝该证据链。",
+        "INCOMPLETE_EVIDENCE_OUTPUT": "模型未对当前批次的每条评论给出完整判断。",
+        "INVALID_STRUCTURED_OUTPUT": "模型多次返回不符合证据判断契约的结构化结果。"
       },
       "topics": "动态主题",
       "findings": "洞察候选",
@@ -148,6 +156,42 @@
       "errors": {
         "start": "无法启动语义分析。",
         "poll": "无法刷新语义分析状态。"
+      }
+    },
+    "evidence": {
+      "title": "证据验证与最终洞察",
+      "description": "运行时模型逐条判断评论与候选主张的语义关系；系统再以确定性规则计算支持、冲突、充分性、置信度与证据强度。",
+      "start": "开始证据验证",
+      "starting": "正在启动…",
+      "completed": "证据验证已完成",
+      "uncertainty": "不确定性",
+      "limitations": "数据与方法限制",
+      "stanceLabel": "证据关系",
+      "reason": "判断理由",
+      "noEvidence": "未发现此类有效证据。",
+      "info": {
+        "findings": "已验证候选",
+        "reviews": "涉及评论",
+        "batches": "验证 Batch",
+        "model": "验证模型"
+      },
+      "view": {
+        "supporting": "查看支持证据（{{count}}）",
+        "conflicting": "查看冲突证据（{{count}}）"
+      },
+      "stance": {
+        "SUPPORTS": "支持",
+        "CONFLICTS": "冲突",
+        "NEUTRAL": "中立",
+        "IRRELEVANT": "无关"
+      },
+      "strength": {
+        "HIGH": "高",
+        "MEDIUM": "中",
+        "LOW": "低"
+      },
+      "errors": {
+        "start": "无法启动证据验证。"
       }
     },
     "sources": {

@@ -1,5 +1,8 @@
 export type AnalysisSource = 'app_store' | 'csv' | 'json'
 export type AnalysisOutputLanguage = 'FOLLOW_UI' | 'zh-CN' | 'en-US'
+export type EvidenceStance = 'SUPPORTS' | 'CONFLICTS' | 'NEUTRAL' | 'IRRELEVANT'
+export type FindingStatus = 'SUPPORTED' | 'WEAK' | 'CONFLICTED' | 'INSUFFICIENT' | 'UNSUPPORTED'
+export type EvidenceStrength = 'HIGH' | 'MEDIUM' | 'LOW'
 
 export interface AnalysisRun {
   id: string
@@ -75,6 +78,8 @@ export interface IngestionResult {
   statistics: CleaningStatistics | null
   reviews: Review[]
   rejected_rows: RejectedReview[]
+  semantic_analysis?: unknown
+  evidence_validation?: unknown
 }
 
 export interface TopicCandidate {
@@ -117,12 +122,103 @@ export interface SemanticAnalysisSummary {
   analysis_time: string | null
 }
 
+export interface EvidenceMetrics {
+  validated_review_count: number
+  relevant_review_count: number
+  support_count: number
+  conflict_count: number
+  neutral_count: number
+  irrelevant_count: number
+  support_ratio: number
+  conflict_ratio: number
+  evidence_density: number
+  average_support_relevance: number
+}
+
+export interface FindingValidationMetadata {
+  analysis_run_id: string
+  audit_id: string
+  finding_candidate_id: string
+  metrics: EvidenceMetrics
+  validated_review_count: number
+  batch_count: number
+  eligible_for_requirement_generation: boolean
+  validation_time: string
+}
+
+export interface Finding {
+  id: string
+  analysis_run_id: string
+  topic: string
+  title: string
+  problem: string
+  summary: string
+  supporting_review_ids: string[]
+  conflicting_review_ids: string[]
+  support_count: number
+  conflict_count: number
+  confidence: number
+  evidence_strength: EvidenceStrength
+  status: FindingStatus
+  uncertainty: string
+  limitations: string[]
+  validation_metadata: FindingValidationMetadata
+}
+
+export interface EvidenceJudgment {
+  analysis_run_id: string
+  finding_candidate_id: string
+  review_id: string
+  stance: EvidenceStance
+  semantic_relevance: number
+  reason: string
+}
+
+export interface EvidenceValidationAudit {
+  id: string
+  analysis_run_id: string
+  finding_candidate_id: string
+  candidate_review_ids: string[]
+  validation_review_ids: string[]
+  supporting_review_ids: string[]
+  conflicting_review_ids: string[]
+  neutral_review_ids: string[]
+  irrelevant_review_ids: string[]
+  judgments: EvidenceJudgment[]
+  status: FindingStatus
+  confidence: number
+  evidence_strength: EvidenceStrength
+  metrics: EvidenceMetrics
+  uncertainty: string
+  limitations: string[]
+  model_provider: string
+  model_name: string
+  validation_time: string
+  revisions: string[]
+  errors: string[]
+}
+
+export interface EvidenceValidationSummary {
+  analysis_run_id: string
+  total_candidate_count: number
+  validated_candidate_count: number
+  validated_review_count: number
+  batch_count: number
+  batch_size: number
+  finding_count: number
+  rejected_candidate_count: number
+  model_provider: string
+  model_name: string
+  validation_time: string
+}
+
 export interface AnalysisRunView {
   analysis_run_id: string
   run: AnalysisRun
   provider: ProviderMetadata
   statistics: CleaningStatistics | null
   semantic_analysis: SemanticAnalysisSummary | null
+  evidence_validation: EvidenceValidationSummary | null
 }
 
 export interface TopicsView {
@@ -133,4 +229,10 @@ export interface TopicsView {
 export interface FindingCandidatesView {
   analysis_run_id: string
   finding_candidates: FindingCandidate[]
+}
+
+export interface FindingsView {
+  analysis_run_id: string
+  findings: Finding[]
+  audits: EvidenceValidationAudit[]
 }

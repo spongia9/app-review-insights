@@ -4,6 +4,7 @@ import type {
   AnalysisRunView,
   AnalysisSource,
   FindingCandidatesView,
+  FindingsView,
   IngestionResult,
   TopicsView,
 } from '../types/analysis'
@@ -134,6 +135,21 @@ export async function getTopics(analysisRunId: string): Promise<TopicsView> {
 
 export async function getFindingCandidates(analysisRunId: string): Promise<FindingCandidatesView> {
   return requestJson<FindingCandidatesView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/finding-candidates`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  })
+}
+
+export async function startEvidenceValidation(analysisRunId: string): Promise<AnalysisRunView> {
+  return requestJson<AnalysisRunView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/evidence`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+}
+
+export async function getFindings(analysisRunId: string): Promise<FindingsView> {
+  return requestJson<FindingsView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/findings`, {
     method: 'GET',
     headers: { Accept: 'application/json' },
   })

@@ -58,5 +58,22 @@ class RunStore:
             return None
         return IngestionResult.model_validate(json.loads(row[0]))
 
+    def find_review_owner(
+        self,
+        review_id: str,
+        *,
+        excluding_analysis_run_id: str,
+    ) -> Optional[str]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT id, result_json FROM analysis_runs WHERE id != ?",
+                (excluding_analysis_run_id,),
+            ).fetchall()
+        for analysis_run_id, payload in rows:
+            parsed = json.loads(payload)
+            if any(review.get("id") == review_id for review in parsed.get("reviews", [])):
+                return str(analysis_run_id)
+        return None
+
     def _connect(self) -> sqlite3.Connection:
         return sqlite3.connect(str(self.database_path), timeout=5)

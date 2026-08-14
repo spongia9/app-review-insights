@@ -1,5 +1,5 @@
 from threading import Thread
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
@@ -7,13 +7,21 @@ from pydantic import BaseModel, Field
 from app.models import (
     AnalysisOutputLanguage,
     AnalysisRunView,
+    FindingsView,
     FindingCandidatesView,
     IngestionResult,
     ReviewsView,
     TopicsView,
 )
 from app.providers.errors import IngestionError
-from app.services import IngestionService, SemanticAnalysisError, SemanticAnalysisService
+from app.services import (
+    EvidenceValidationError,
+    EvidenceValidationService,
+    IngestionService,
+    SemanticAnalysisError,
+    SemanticAnalysisService,
+)
+from app.services.evidence import evidence_summary
 from app.services.semantic import semantic_summary
 from app.storage import RunStore
 
@@ -32,6 +40,10 @@ class SemanticAnalysisRequest(BaseModel):
     ui_language: Optional[str] = Field(default=None, pattern="^(zh-CN|en-US)$")
 
 
+class EvidenceValidationRequest(BaseModel):
+    candidate_ids: Optional[List[str]] = None
+
+
 def get_service(request: Request) -> IngestionService:
     return request.app.state.ingestion_service
 
@@ -42,6 +54,10 @@ def get_store(request: Request) -> RunStore:
 
 def get_semantic_service(request: Request) -> SemanticAnalysisService:
     return request.app.state.semantic_analysis_service
+
+
+def get_evidence_service(request: Request) -> EvidenceValidationService:
+    return request.app.state.evidence_validation_service
 
 
 def raise_http_error(error: IngestionError) -> None:
@@ -115,6 +131,7 @@ def get_analysis_run(analysis_run_id: str, request: Request) -> AnalysisRunView:
         provider=result.provider,
         statistics=result.statistics,
         semantic_analysis=(semantic_summary(result.semantic_analysis) if result.semantic_analysis else None),
+        evidence_validation=(evidence_summary(result.evidence_validation) if result.evidence_validation else None),
     )
 
 
@@ -172,6 +189,51 @@ def start_semantic_analysis(
         provider=queued.provider,
         statistics=queued.statistics,
         semantic_analysis=(semantic_summary(queued.semantic_analysis) if queued.semantic_analysis else None),
+        evidence_validation=(evidence_summary(queued.evidence_validation) if queued.evidence_validation else None),
+    )
+
+
+def _run_evidence_validation(
+    service: EvidenceValidationService,
+    analysis_run_id: str,
+    candidate_ids: Optional[List[str]],
+) -> None:
+    try:
+        service.validate(analysis_run_id, candidate_ids=candidate_ids)
+    except EvidenceValidationError:
+        # The service persists terminal failure details for polling clients.
+        return
+
+
+@router.post("/{analysis_run_id}/evidence", response_model=AnalysisRunView, status_code=202)
+def start_evidence_validation(
+    analysis_run_id: str,
+    payload: EvidenceValidationRequest,
+    request: Request,
+) -> AnalysisRunView:
+    try:
+        queued = get_evidence_service(request).queue(
+            analysis_run_id,
+            candidate_ids=payload.candidate_ids,
+        )
+    except EvidenceValidationError as error:
+        raise HTTPException(
+            status_code=error.status_code,
+            detail={"code": error.code, "message": error.message},
+        ) from error
+    Thread(
+        target=_run_evidence_validation,
+        args=(get_evidence_service(request), analysis_run_id, payload.candidate_ids),
+        daemon=True,
+        name=f"evidence-{analysis_run_id}",
+    ).start()
+    return AnalysisRunView(
+        analysis_run_id=analysis_run_id,
+        run=queued.run,
+        provider=queued.provider,
+        statistics=queued.statistics,
+        semantic_analysis=(semantic_summary(queued.semantic_analysis) if queued.semantic_analysis else None),
+        evidence_validation=(evidence_summary(queued.evidence_validation) if queued.evidence_validation else None),
     )
 
 
@@ -198,4 +260,15 @@ def get_finding_candidates(analysis_run_id: str, request: Request) -> FindingCan
     return FindingCandidatesView(
         analysis_run_id=analysis_run_id,
         finding_candidates=consolidated.finding_candidates if consolidated else [],
+    )
+
+
+@router.get("/{analysis_run_id}/findings", response_model=FindingsView)
+def get_findings(analysis_run_id: str, request: Request) -> FindingsView:
+    result = require_result(analysis_run_id, request)
+    evidence = result.evidence_validation
+    return FindingsView(
+        analysis_run_id=analysis_run_id,
+        findings=evidence.findings if evidence else [],
+        audits=evidence.audits if evidence else [],
     )

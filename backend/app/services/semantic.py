@@ -372,6 +372,7 @@ class SemanticAnalysisService:
             update={
                 "run": run,
                 "semantic_analysis": result.semantic_analysis if resume_consolidation else None,
+                "evidence_validation": None,
             }
         )
         self.store.save(queued)
@@ -437,6 +438,7 @@ class SemanticAnalysisService:
             update={
                 "run": run,
                 "semantic_analysis": result.semantic_analysis if resume_consolidation else None,
+                "evidence_validation": None,
             }
         )
         self.store.save(result)
