@@ -80,9 +80,10 @@ LLM_MODEL=deepseek-v4-flash
 LLM_BASE_URL=https://api.deepseek.com
 LLM_API_KEY=<your DeepSeek API key>
 LLM_REVIEW_BATCH_SIZE=25
+LLM_CONSOLIDATION_GROUP_SIZE=4
 LLM_MAX_RETRIES=2
-LLM_REQUEST_TIMEOUT_SECONDS=120
-LLM_MAX_OUTPUT_TOKENS=4096
+LLM_REQUEST_TIMEOUT_SECONDS=180
+LLM_MAX_OUTPUT_TOKENS=32768
 LLM_TEMPERATURE=0.2
 LLM_THINKING_ENABLED=false
 LLM_TRUST_ENVIRONMENT_PROXY=false
@@ -94,7 +95,9 @@ Obtain the key from the DeepSeek platform. The key is loaded as a secret and is 
 
 Prompts live in `backend/app/prompts/`: `topic_discovery.md`, `finding_candidate.md`, and `topic_consolidation.md`. They require generated text in the resolved Analysis Output Language and prohibit fabricated reviews/IDs, requirements, PRDs, version plans, test cases, and final evidence claims.
 
-All cleaned reviews are analyzed in deterministic ordered batches of `LLM_REVIEW_BATCH_SIZE`; Phase 3 does not sample (`sampling_strategy=NONE`). Only Review ID, rating, title, text, version, language, and date are sent—never `raw_data`. Batch responses may cite only the current batch; consolidation may cite only the current run and must preserve the union of source Review IDs and batch IDs. Invalid JSON/schema, invalid IDs, timeouts, and retryable provider failures receive at most `LLM_MAX_RETRIES` correction retries.
+All cleaned reviews are analyzed in deterministic ordered batches of `LLM_REVIEW_BATCH_SIZE`; Phase 3 does not sample (`sampling_strategy=NONE`). Only Review ID, rating, title, text, version, language, and date are sent—never `raw_data`. Batch responses may cite only the current batch. Cross-batch consolidation is hierarchical: each request processes at most `LLM_CONSOLIDATION_GROUP_SIZE` source units, persists a round checkpoint, and validates the exact Review-to-batch lineage before the next round. A failed consolidation can resume from the persisted batch results or latest completed consolidation round instead of repeating topic discovery and finding extraction.
+
+The provider records safe diagnostics for `finish_reason`, token usage, JSON parse location, and Pydantic error locations without logging API keys, review text, or raw model content. Output truncation is not retried with the same request; empty content, malformed JSON, schema mismatch, invalid IDs, timeouts, and retryable provider failures use at most `LLM_MAX_RETRIES` correction retries. If an otherwise valid consolidation omits source lineage, deterministic repair carries the original unmerged source candidate forward and records a revision; it never assigns an omitted Review to a different model-generated claim.
 
 ### Language and transparency
 
@@ -104,7 +107,7 @@ UI locale and Analysis Output Language are independent. The request supports `FO
 
 - `FindingCandidate` is `UNVALIDATED_CANDIDATE`, not the final `Finding` model.
 - No semantic support/conflict/sufficiency validation or final evidence status is produced.
-- A single FastAPI worker runs background tasks in-process; process restarts can interrupt an active model request, while prior persisted stage output remains inspectable.
+- A single FastAPI worker runs background tasks in-process; process restarts can interrupt the active request, while completed batch work and completed consolidation rounds remain resumable.
 - DeepSeek API availability, account quota, regional/network access, and model behavior are external dependencies.
 - Requirement, VersionPlan, PRD, TestCase, and final traceability generation remain unimplemented.
 

@@ -14,6 +14,7 @@ export interface AnalysisRun {
   progress: number
   warnings: string[]
   errors: string[]
+  error_code: string | null
   revisions: string[]
   model_provider: string | null
   model_name: string | null
@@ -103,6 +104,8 @@ export interface SemanticAnalysisSummary {
   analyzed_review_count: number
   batch_count: number
   batch_size: number
+  consolidation_group_size: number | null
+  model_max_output_tokens: number | null
   sampling_strategy: string
   model_provider: string
   model_name: string

@@ -25,6 +25,7 @@ from app.models.review import Review
 from app.models.semantic import (
     AuditArtifact,
     BatchAnalysisResult,
+    ConsolidationCheckpoint,
     ConsolidatedAnalysisResult,
     FindingCandidate,
     FindingCandidateOutput,
@@ -48,6 +49,7 @@ __all__ = [
     "AuditArtifact",
     "AuditArtifactType",
     "BatchAnalysisResult",
+    "ConsolidationCheckpoint",
     "CandidateStatus",
     "ConsolidatedAnalysisResult",
     "EvidenceStrength",

@@ -2,7 +2,7 @@ import json
 from time import sleep
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Type
+from typing import List, Optional, Type
 
 import pytest
 from pydantic import BaseModel, ValidationError
@@ -16,6 +16,7 @@ from app.models import (
     AnalysisRunStatus,
     BatchAnalysisResult,
     CandidateStatus,
+    ConsolidationCheckpoint,
     ConsolidatedAnalysisResult,
     FindingCandidate,
     FindingCandidateOutput,
@@ -33,6 +34,7 @@ from app.services.semantic import (
     _validate_finding_scope,
     _validate_topic_scope,
     create_review_batches,
+    repair_consolidation_lineage,
     resolve_output_language,
     validate_consolidation_lineage,
 )
@@ -132,9 +134,14 @@ class DynamicMockProvider(LLMProvider):
                     )
                 ]
             )
-        batch_results = payload["batch_results"]
-        all_review_ids = list(dict.fromkeys(review_id for batch in batch_results for review_id in batch["review_ids"]))
-        all_batch_ids = [batch["batch_id"] for batch in batch_results]
+        all_topic_review_ids = payload["allowed_topic_review_ids"]
+        all_finding_review_ids = payload["allowed_finding_review_ids"]
+        all_batch_ids = list(
+            dict.fromkeys(
+                payload["review_to_batch"][review_id]
+                for review_id in all_finding_review_ids
+            )
+        )
         name = "离线下载与播放可靠性" if language == "zh-CN" else "Offline download and playback reliability"
         text = "下载内容在离线状态下可能无法播放" if language == "zh-CN" else "Downloaded episodes may fail to play offline"
         return ConsolidatedAnalysisResult(
@@ -145,8 +152,8 @@ class DynamicMockProvider(LLMProvider):
                     analysis_run_id=payload["analysis_run_id"],
                     name=name,
                     summary=name,
-                    review_ids=all_review_ids,
-                    batch_id=all_batch_ids[0],
+                    review_ids=all_topic_review_ids,
+                    batch_id=payload["review_to_batch"][all_topic_review_ids[0]],
                 )
             ],
             finding_candidates=[
@@ -157,7 +164,7 @@ class DynamicMockProvider(LLMProvider):
                     title=text,
                     problem=text,
                     summary=text,
-                    supporting_review_ids=all_review_ids,
+                    supporting_review_ids=all_finding_review_ids,
                     source_batch_ids=all_batch_ids,
                 )
             ],
@@ -202,11 +209,22 @@ class CorrectingInvalidIdProvider(DynamicMockProvider):
         return super().generate_structured(**kwargs)  # type: ignore[arg-type]
 
 
-def service(tmp_path: Path, provider: LLMProvider, *, batch_size: int = 2, retries: int = 2) -> SemanticAnalysisService:
+def service(
+    tmp_path: Path,
+    provider: LLMProvider,
+    *,
+    batch_size: int = 2,
+    retries: int = 2,
+    group_size: int = 4,
+    reviews: Optional[List[Review]] = None,
+) -> SemanticAnalysisService:
     settings = Settings(
         _env_file=None,
         sqlite_database_path=tmp_path / "semantic-tests.db",
+        llm_provider=provider.provider_name,
+        llm_model=provider.model_name,
         llm_review_batch_size=batch_size,
+        llm_consolidation_group_size=group_size,
         llm_max_retries=retries,
     )
     store = RunStore(settings.sqlite_database_path)
@@ -220,6 +238,8 @@ def service(tmp_path: Path, provider: LLMProvider, *, batch_size: int = 2, retri
             ]
         )
     )
+    if reviews is not None:
+        store.save(stored_result(reviews))
     return SemanticAnalysisService(settings, store, provider_factory=lambda _: provider)
 
 
@@ -382,6 +402,94 @@ def test_consolidation_must_preserve_source_batch_lineage() -> None:
         validate_consolidation_lineage(consolidated, [first_batch, second_batch])
 
 
+def test_deterministic_lineage_repair_carries_forward_missing_source_candidates() -> None:
+    first_batch = BatchAnalysisResult(
+        analysis_run_id=RUN_ID,
+        batch_id="B0001",
+        review_ids=["R000001"],
+        topic_candidates=[
+            TopicCandidate(
+                id="T1",
+                analysis_run_id=RUN_ID,
+                name="Playback",
+                summary="Playback",
+                review_ids=["R000001"],
+                batch_id="B0001",
+            )
+        ],
+        finding_candidates=[
+            FindingCandidate(
+                id="F1",
+                analysis_run_id=RUN_ID,
+                topic="Playback",
+                title="Playback stops",
+                problem="Playback stops",
+                summary="Playback stops",
+                supporting_review_ids=["R000001"],
+                source_batch_ids=["B0001"],
+            )
+        ],
+    )
+    second_batch = BatchAnalysisResult(
+        analysis_run_id=RUN_ID,
+        batch_id="B0002",
+        review_ids=["R000002"],
+        topic_candidates=[
+            TopicCandidate(
+                id="T2",
+                analysis_run_id=RUN_ID,
+                name="Notifications",
+                summary="Notifications",
+                review_ids=["R000002"],
+                batch_id="B0002",
+            )
+        ],
+        finding_candidates=[
+            FindingCandidate(
+                id="F2",
+                analysis_run_id=RUN_ID,
+                topic="Notifications",
+                title="Duplicate alerts",
+                problem="Duplicate alerts",
+                summary="Duplicate alerts",
+                supporting_review_ids=["R000002"],
+                source_batch_ids=["B0002"],
+            )
+        ],
+    )
+    source_units = [
+        ConsolidatedAnalysisResult(
+            analysis_run_id=RUN_ID,
+            topic_candidates=batch.topic_candidates,
+            finding_candidates=batch.finding_candidates,
+        )
+        for batch in (first_batch, second_batch)
+    ]
+    incomplete = ConsolidatedAnalysisResult(
+        analysis_run_id=RUN_ID,
+        topic_candidates=first_batch.topic_candidates,
+        finding_candidates=first_batch.finding_candidates,
+    )
+
+    repaired = repair_consolidation_lineage(
+        incomplete,
+        source_units,
+        {"R000001": "B0001", "R000002": "B0002"},
+    )
+
+    assert {
+        review_id
+        for topic in repaired.topic_candidates
+        for review_id in topic.review_ids
+    } == {"R000001", "R000002"}
+    assert {
+        review_id
+        for finding in repaired.finding_candidates
+        for review_id in finding.supporting_review_ids
+    } == {"R000001", "R000002"}
+    assert any(topic.name == "Notifications" for topic in repaired.topic_candidates)
+
+
 def test_multilingual_unknown_domain_and_output_language_propagation(tmp_path: Path) -> None:
     provider = DynamicMockProvider()
     semantic_service = service(tmp_path, provider, batch_size=2)
@@ -406,6 +514,192 @@ def test_multilingual_unknown_domain_and_output_language_propagation(tmp_path: P
     assert all(call[1]["analysis_goal"] for call in provider.calls)
     assert all(call[1]["output_language"] == "zh-CN" for call in provider.calls)
     assert all("raw_data" not in json.dumps(call[1]) for call in provider.calls)
+
+
+def test_hierarchical_consolidation_bounds_group_size_and_preserves_all_ids(tmp_path: Path) -> None:
+    provider = DynamicMockProvider()
+    reviews = [
+        review(f"R{index:06d}", f"Review problem {index}")
+        for index in range(1, 11)
+    ]
+    semantic_service = service(
+        tmp_path,
+        provider,
+        batch_size=1,
+        group_size=4,
+        reviews=reviews,
+    )
+
+    completed = semantic_service.analyze(
+        RUN_ID,
+        output_language=AnalysisOutputLanguage.EN_US,
+        ui_language="en-US",
+    )
+
+    semantic = completed.semantic_analysis
+    assert semantic is not None
+    assert semantic.consolidation_checkpoint is not None
+    assert semantic.consolidation_checkpoint.round_number == 2
+    assert len(semantic.consolidation_checkpoint.units) == 1
+    consolidation_calls = [
+        payload
+        for schema_name, payload in provider.calls
+        if schema_name == "ConsolidatedAnalysisResult"
+    ]
+    assert len(consolidation_calls) == 4
+    assert max(len(payload["source_results"]) for payload in consolidation_calls) <= 4
+    assert semantic.consolidated_result is not None
+    assert semantic.consolidated_result.finding_candidates[0].supporting_review_ids == [
+        review.id for review in reviews
+    ]
+
+
+def test_failed_consolidation_resumes_without_reanalyzing_batches(tmp_path: Path) -> None:
+    original_provider = DynamicMockProvider()
+    reviews = [
+        review(f"R{index:06d}", f"Review problem {index}")
+        for index in range(1, 11)
+    ]
+    semantic_service = service(
+        tmp_path,
+        original_provider,
+        batch_size=1,
+        group_size=4,
+        reviews=reviews,
+    )
+    completed = semantic_service.analyze(
+        RUN_ID,
+        output_language=AnalysisOutputLanguage.EN_US,
+        ui_language="en-US",
+    )
+    assert completed.semantic_analysis is not None
+    failed_semantic = completed.semantic_analysis.model_copy(
+        update={
+            "consolidated_result": None,
+            "consolidation_checkpoint": None,
+            "analysis_time": None,
+        }
+    )
+    failed_run = completed.run.model_copy(
+        update={
+            "status": AnalysisRunStatus.FAILED,
+            "current_stage": PipelineStage.TOPIC_CONSOLIDATION,
+            "last_successful_stage": PipelineStage.FINDING_EXTRACTION,
+            "progress": 92,
+            "errors": ["Prior consolidation failed."],
+        }
+    )
+    semantic_service.store.save(
+        completed.model_copy(
+            update={"run": failed_run, "semantic_analysis": failed_semantic}
+        )
+    )
+
+    resume_provider = DynamicMockProvider()
+    resumed_service = SemanticAnalysisService(
+        semantic_service.settings,
+        semantic_service.store,
+        provider_factory=lambda _: resume_provider,
+    )
+    queued = resumed_service.queue(
+        RUN_ID,
+        output_language=AnalysisOutputLanguage.EN_US,
+        ui_language="en-US",
+    )
+    assert queued.run.current_stage == PipelineStage.TOPIC_CONSOLIDATION
+    assert queued.run.progress == 92
+    assert queued.semantic_analysis is not None
+
+    resumed = resumed_service.analyze(
+        RUN_ID,
+        output_language=AnalysisOutputLanguage.EN_US,
+        ui_language="en-US",
+    )
+    assert resumed.run.status == AnalysisRunStatus.COMPLETED
+    assert resumed.semantic_analysis is not None
+    assert resumed.semantic_analysis.consolidated_result is not None
+    assert {
+        schema_name for schema_name, _ in resume_provider.calls
+    } == {"ConsolidatedAnalysisResult"}
+    assert len(resume_provider.calls) == 4
+
+
+def test_resume_uses_latest_completed_consolidation_round(tmp_path: Path) -> None:
+    original_provider = DynamicMockProvider()
+    reviews = [
+        review(f"R{index:06d}", f"Review problem {index}")
+        for index in range(1, 11)
+    ]
+    semantic_service = service(
+        tmp_path,
+        original_provider,
+        batch_size=1,
+        group_size=4,
+        reviews=reviews,
+    )
+    completed = semantic_service.analyze(
+        RUN_ID,
+        output_language=AnalysisOutputLanguage.EN_US,
+        ui_language="en-US",
+    )
+    assert completed.semantic_analysis is not None
+    first_round_artifacts = [
+        artifact
+        for artifact in completed.semantic_analysis.audit_artifacts
+        if artifact.batch_id and artifact.batch_id.startswith("C-R01-")
+    ]
+    assert len(first_round_artifacts) == 3
+    checkpoint = ConsolidationCheckpoint(
+        analysis_run_id=RUN_ID,
+        round_number=1,
+        units=[
+            ConsolidatedAnalysisResult.model_validate(artifact.payload)
+            for artifact in first_round_artifacts
+        ],
+    )
+    partial_semantic = completed.semantic_analysis.model_copy(
+        update={
+            "consolidated_result": None,
+            "consolidation_checkpoint": checkpoint,
+            "analysis_time": None,
+        }
+    )
+    failed_run = completed.run.model_copy(
+        update={
+            "status": AnalysisRunStatus.FAILED,
+            "current_stage": PipelineStage.TOPIC_CONSOLIDATION,
+            "last_successful_stage": PipelineStage.TOPIC_CONSOLIDATION,
+            "progress": 94,
+            "errors": ["Final consolidation failed."],
+        }
+    )
+    semantic_service.store.save(
+        completed.model_copy(
+            update={"run": failed_run, "semantic_analysis": partial_semantic}
+        )
+    )
+
+    resume_provider = DynamicMockProvider()
+    resumed_service = SemanticAnalysisService(
+        semantic_service.settings,
+        semantic_service.store,
+        provider_factory=lambda _: resume_provider,
+    )
+    resumed_service.queue(
+        RUN_ID,
+        output_language=AnalysisOutputLanguage.EN_US,
+        ui_language="en-US",
+    )
+    resumed = resumed_service.analyze(
+        RUN_ID,
+        output_language=AnalysisOutputLanguage.EN_US,
+        ui_language="en-US",
+    )
+
+    assert resumed.run.status == AnalysisRunStatus.COMPLETED
+    assert len(resume_provider.calls) == 1
+    assert resume_provider.calls[0][0] == "ConsolidatedAnalysisResult"
+    assert len(resume_provider.calls[0][1]["source_results"]) == 3
 
 
 def test_follow_ui_output_language_resolution() -> None:
@@ -435,6 +729,7 @@ def test_provider_failures_respect_retry_limit(tmp_path: Path, code: str, messag
     persisted = semantic_service.store.get(RUN_ID)
     assert persisted is not None
     assert persisted.run.status == AnalysisRunStatus.FAILED
+    assert persisted.run.error_code == code
     assert persisted.run.last_successful_stage == PipelineStage.CLEANING_AND_NORMALIZATION
     assert len(persisted.run.revisions) == 3
 
@@ -451,6 +746,32 @@ def test_non_retryable_provider_configuration_error_stops_immediately(tmp_path: 
             ui_language="en-US",
         )
     assert provider.call_count == 1
+
+
+def test_truncated_output_is_not_retried_unchanged(tmp_path: Path) -> None:
+    provider = FailureProvider(
+        LLMProviderError(
+            "LLM_OUTPUT_TRUNCATED",
+            "The output reached its limit.",
+            retryable=False,
+            details={"finish_reason": "length", "completion_tokens": 4096},
+        )
+    )
+    semantic_service = service(tmp_path, provider, retries=3)
+
+    with pytest.raises(SemanticAnalysisError) as error:
+        semantic_service.analyze(
+            RUN_ID,
+            output_language=AnalysisOutputLanguage.EN_US,
+            ui_language="en-US",
+        )
+
+    assert error.value.code == "LLM_OUTPUT_TRUNCATED"
+    assert provider.call_count == 1
+    persisted = semantic_service.store.get(RUN_ID)
+    assert persisted is not None
+    assert persisted.run.error_code == "LLM_OUTPUT_TRUNCATED"
+    assert "finish_reason" in persisted.run.revisions[-1]
 
 
 def test_invalid_review_id_receives_correction_retry(tmp_path: Path) -> None:
@@ -520,7 +841,65 @@ def test_deepseek_provider_timeout_and_invalid_structured_output(monkeypatch: py
             response_model=TopicDiscoveryOutput,
             schema_name="TopicDiscoveryOutput",
         )
-    assert invalid_error.value.code == "INVALID_STRUCTURED_OUTPUT"
+    assert invalid_error.value.code == "LLM_INVALID_JSON"
+
+    class TruncatedResponse(Response):
+        def json(self) -> dict:
+            return {
+                "id": "response-truncated",
+                "choices": [
+                    {
+                        "finish_reason": "length",
+                        "message": {"content": '{"topics": ['},
+                    }
+                ],
+                "usage": {"prompt_tokens": 500, "completion_tokens": 1024},
+            }
+
+    class TruncatedClient(TimeoutClient):
+        def post(self, *_: object, **__: object) -> TruncatedResponse:
+            return TruncatedResponse()
+
+    monkeypatch.setattr("app.llm.deepseek.httpx.Client", TruncatedClient)
+    with pytest.raises(LLMProviderError) as truncated_error:
+        provider.generate_structured(
+            system_prompt="json",
+            user_prompt="{}",
+            response_model=TopicDiscoveryOutput,
+            schema_name="TopicDiscoveryOutput",
+        )
+    assert truncated_error.value.code == "LLM_OUTPUT_TRUNCATED"
+    assert truncated_error.value.retryable is False
+    assert truncated_error.value.details["finish_reason"] == "length"
+    assert truncated_error.value.details["completion_tokens"] == 1024
+
+    class InvalidSchemaResponse(Response):
+        def json(self) -> dict:
+            return {
+                "id": "response-schema",
+                "choices": [
+                    {
+                        "finish_reason": "stop",
+                        "message": {"content": '{"topics": [{"id": "missing-fields"}]}'},
+                    }
+                ],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 20},
+            }
+
+    class InvalidSchemaClient(TimeoutClient):
+        def post(self, *_: object, **__: object) -> InvalidSchemaResponse:
+            return InvalidSchemaResponse()
+
+    monkeypatch.setattr("app.llm.deepseek.httpx.Client", InvalidSchemaClient)
+    with pytest.raises(LLMProviderError) as schema_error:
+        provider.generate_structured(
+            system_prompt="json",
+            user_prompt="{}",
+            response_model=TopicDiscoveryOutput,
+            schema_name="TopicDiscoveryOutput",
+        )
+    assert schema_error.value.code == "LLM_SCHEMA_VALIDATION_FAILED"
+    assert schema_error.value.details["validation_errors"]
 
 
 def test_semantic_api_starts_polls_and_exposes_candidates(tmp_path: Path) -> None:

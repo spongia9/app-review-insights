@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Type, TypeVar
+from typing import Any, Dict, Optional, Type, TypeVar
 
 from pydantic import BaseModel
 
@@ -8,11 +8,19 @@ StructuredOutputT = TypeVar("StructuredOutputT", bound=BaseModel)
 
 
 class LLMProviderError(Exception):
-    def __init__(self, code: str, message: str, *, retryable: bool = True) -> None:
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        *,
+        retryable: bool = True,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
         super().__init__(message)
         self.code = code
         self.message = message
         self.retryable = retryable
+        self.details = details or {}
 
 
 class LLMProvider(ABC):

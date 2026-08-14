@@ -88,12 +88,92 @@ class DeepSeekProvider(LLMProvider):
 
         try:
             data: Dict[str, Any] = response.json()
-            content = data["choices"][0]["message"]["content"]
-            if not isinstance(content, str) or not content.strip():
-                raise ValueError("empty model content")
-            return response_model.model_validate(json.loads(content))
-        except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError, ValidationError) as error:
+            choice = data["choices"][0]
+            message = choice["message"]
+        except (KeyError, IndexError, TypeError, ValueError) as error:
             raise LLMProviderError(
-                "INVALID_STRUCTURED_OUTPUT",
-                f"The provider returned invalid {schema_name} structured output.",
+                "LLM_INVALID_RESPONSE",
+                "The LLM provider returned an invalid response envelope.",
+                details={"schema_name": schema_name},
+            ) from error
+
+        usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}
+        finish_reason = choice.get("finish_reason")
+        content = message.get("content") if isinstance(message, dict) else None
+        diagnostics = {
+            "schema_name": schema_name,
+            "response_id": data.get("id"),
+            "finish_reason": finish_reason,
+            "prompt_tokens": usage.get("prompt_tokens"),
+            "completion_tokens": usage.get("completion_tokens"),
+            "max_output_tokens": self.max_output_tokens,
+            "content_chars": len(content) if isinstance(content, str) else 0,
+        }
+
+        if finish_reason == "length":
+            completion_tokens = diagnostics.get("completion_tokens")
+            raise LLMProviderError(
+                "LLM_OUTPUT_TRUNCATED",
+                (
+                    "The LLM output reached the configured token limit before the "
+                    f"{schema_name} JSON object was complete "
+                    f"(completion_tokens={completion_tokens}, limit={self.max_output_tokens})."
+                ),
+                retryable=False,
+                details=diagnostics,
+            )
+        if finish_reason == "content_filter":
+            raise LLMProviderError(
+                "LLM_CONTENT_FILTERED",
+                "The LLM provider filtered the structured response.",
+                retryable=False,
+                details=diagnostics,
+            )
+        if finish_reason == "insufficient_system_resource":
+            raise LLMProviderError(
+                "LLM_INSUFFICIENT_RESOURCE",
+                "The LLM provider could not complete the request because capacity was unavailable.",
+                details=diagnostics,
+            )
+        if not isinstance(content, str) or not content.strip():
+            raise LLMProviderError(
+                "LLM_EMPTY_CONTENT",
+                f"The LLM provider returned empty {schema_name} content.",
+                details=diagnostics,
+            )
+
+        try:
+            parsed = json.loads(content)
+        except json.JSONDecodeError as error:
+            raise LLMProviderError(
+                "LLM_INVALID_JSON",
+                (
+                    f"The LLM returned malformed {schema_name} JSON at "
+                    f"line {error.lineno}, column {error.colno}."
+                ),
+                details={
+                    **diagnostics,
+                    "json_error_line": error.lineno,
+                    "json_error_column": error.colno,
+                },
+            ) from error
+
+        try:
+            return response_model.model_validate(parsed)
+        except ValidationError as error:
+            validation_errors = [
+                {
+                    "location": ".".join(str(part) for part in item["loc"]),
+                    "type": item["type"],
+                }
+                for item in error.errors(include_input=False)[:12]
+            ]
+            locations = ", ".join(item["location"] for item in validation_errors[:4])
+            raise LLMProviderError(
+                "LLM_SCHEMA_VALIDATION_FAILED",
+                (
+                    f"The LLM returned JSON that does not match {schema_name}"
+                    f"{f' at {locations}' if locations else ''}."
+                ),
+                details={**diagnostics, "validation_errors": validation_errors},
             ) from error

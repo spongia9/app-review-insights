@@ -64,6 +64,11 @@ class ConsolidatedAnalysisResult(RunScopedModel):
     finding_candidates: List[FindingCandidate] = Field(default_factory=list)
 
 
+class ConsolidationCheckpoint(RunScopedModel):
+    round_number: int = Field(default=0, ge=0)
+    units: List[ConsolidatedAnalysisResult] = Field(default_factory=list)
+
+
 class AuditArtifact(RunScopedModel):
     id: str = Field(min_length=1)
     artifact_type: AuditArtifactType
@@ -78,6 +83,8 @@ class SemanticAnalysisResult(RunScopedModel):
     analyzed_review_count: int = Field(ge=0)
     batch_count: int = Field(ge=0)
     batch_size: int = Field(ge=1)
+    consolidation_group_size: Optional[int] = Field(default=None, ge=2)
+    model_max_output_tokens: Optional[int] = Field(default=None, ge=1)
     sampling_strategy: str = "NONE"
     model_provider: str = Field(min_length=1)
     model_name: str = Field(min_length=1)
@@ -85,6 +92,7 @@ class SemanticAnalysisResult(RunScopedModel):
     output_language: AnalysisOutputLanguage
     resolved_output_language: AnalysisOutputLanguage
     batch_results: List[BatchAnalysisResult] = Field(default_factory=list)
+    consolidation_checkpoint: Optional[ConsolidationCheckpoint] = None
     consolidated_result: Optional[ConsolidatedAnalysisResult] = None
     audit_artifacts: List[AuditArtifact] = Field(default_factory=list)
     analysis_time: Optional[datetime] = None
@@ -95,6 +103,8 @@ class SemanticAnalysisSummary(RunScopedModel):
     analyzed_review_count: int = Field(ge=0)
     batch_count: int = Field(ge=0)
     batch_size: int = Field(ge=1)
+    consolidation_group_size: Optional[int] = Field(default=None, ge=2)
+    model_max_output_tokens: Optional[int] = Field(default=None, ge=1)
     sampling_strategy: str
     model_provider: str
     model_name: str

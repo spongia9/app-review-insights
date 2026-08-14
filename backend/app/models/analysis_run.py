@@ -25,6 +25,7 @@ class AnalysisRun(DomainModel):
 
     warnings: List[str] = Field(default_factory=list)
     errors: List[str] = Field(default_factory=list)
+    error_code: Optional[str] = None
     revisions: List[str] = Field(default_factory=list)
 
     total_review_count: int = Field(default=0, ge=0)

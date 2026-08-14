@@ -171,7 +171,7 @@ def start_semantic_analysis(
         run=queued.run,
         provider=queued.provider,
         statistics=queued.statistics,
-        semantic_analysis=None,
+        semantic_analysis=(semantic_summary(queued.semantic_analysis) if queued.semantic_analysis else None),
     )
 
 

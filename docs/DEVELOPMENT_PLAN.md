@@ -114,6 +114,8 @@ Scope:
 - One real LLM provider behind a small internal interface.
 - Structured prompt/output schemas.
 - Bounded batch topic discovery and cross-batch consolidation.
+- Hierarchical consolidation groups with persisted round checkpoints and consolidation-only resume.
+- Safe provider diagnostics for truncation, empty output, malformed JSON, and schema mismatch.
 - Structured Finding drafts referencing current-run Review IDs.
 - Goal-aware analysis and limited retries for invalid output/failure.
 
@@ -124,6 +126,7 @@ Done Criteria:
 - Model outputs validate through Pydantic and only current-run Review IDs are accepted.
 - `total_review_count`, `analyzed_review_count`, `sampling_strategy`, and `batch_count` are stored.
 - Topic/Finding drafts are persisted as audit artifacts.
+- Large multi-batch inputs do not depend on one unbounded consolidation response, and compatible failures resume without repeating completed batch analysis.
 - Mocked deterministic tests pass; a configured real-provider smoke run is documented when credentials/network are available.
 
 ### Phase 4 — Evidence

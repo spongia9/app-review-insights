@@ -91,6 +91,12 @@ Cleaned Reviews are processed in configured batches (`LLM_REVIEW_BATCH_SIZE`, de
 
 Every model response must pass Pydantic schema validation plus deterministic `analysis_run_id`, Review ID, and batch ID allowlist checks. Batch calls may reference only current-batch Reviews. Consolidation may reference only current-run Reviews and source batches, and it must preserve the source Topic/Finding Review-ID lineage. Invalid structured output, timeout, provider failure, or invalid identifiers receive only the configured finite correction retries; exhaustion fails the semantic run without fabricated output.
 
+Cross-batch consolidation must use bounded hierarchical groups rather than one unbounded final request. The default consolidation group size is four source units. Every completed round must persist a run-scoped checkpoint containing the consolidated units and audit artifacts. If consolidation fails after Finding extraction, a retry must reuse the compatible persisted batch results and latest completed consolidation checkpoint; it must not repeat successful Topic discovery or Finding extraction calls.
+
+Provider failures must distinguish output truncation, empty content, malformed JSON, Pydantic schema mismatch, content filtering, capacity failure, timeout, and HTTP/provider errors. Safe diagnostics may include response ID, finish reason, token counts, content character count, JSON line/column, and validation field locations. API keys, full Review text, and raw model responses must not be stored in failure diagnostics. A truncated response must not be retried unchanged.
+
+If a schema-valid consolidation omits source Review lineage, the deterministic validator may repair only by carrying the affected original source Topic/Finding Candidate forward unchanged and recording a revision. It must not attach an omitted Review ID to a different generated claim. Unknown, cross-run, or out-of-group Review IDs remain rejection conditions and cannot be repaired into scope.
+
 Persist transparency fields `total_review_count`, `analyzed_review_count`, `batch_count`, `batch_size`, `sampling_strategy`, `model_provider`, `model_name`, `analysis_goal`, `output_language`, and resolved output language. Persist run-scoped topic draft, finding draft, and consolidation draft audit artifacts at stage boundaries. Phase 3 explicitly excludes final evidence status, Requirements, VersionPlan, PRD, TestCases, and final traceability validation.
 
 ## FR-001 — U.S. App Store URL Input

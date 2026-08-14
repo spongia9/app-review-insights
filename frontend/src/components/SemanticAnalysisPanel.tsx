@@ -34,6 +34,12 @@ export function SemanticAnalysisPanel({ ingestion }: SemanticAnalysisPanelProps)
 
   const status = runView?.run.status
   const isActive = status === 'PENDING' || status === 'RUNNING'
+  const canResumeConsolidation = Boolean(
+    status === 'FAILED' &&
+    runView?.semantic_analysis &&
+    (runView.run.last_successful_stage === 'FINDING_EXTRACTION' ||
+      runView.run.last_successful_stage === 'TOPIC_CONSOLIDATION'),
+  )
 
   useEffect(() => {
     if (!isActive) return
@@ -76,6 +82,12 @@ export function SemanticAnalysisPanel({ ingestion }: SemanticAnalysisPanelProps)
   }
 
   const summary = runView?.semantic_analysis
+  const failureCode = runView?.run.error_code
+  const failureMessage = failureCode
+    ? t(`analysis.semantic.errorCodes.${failureCode}`, {
+        defaultValue: t('analysis.semantic.errors.start'),
+      })
+    : error ?? runView?.run.errors.join(' ') ?? t('analysis.semantic.errors.start')
 
   return (
     <section className="mt-10 border-t border-[#d7e3ee] pt-8" data-testid="semantic-analysis">
@@ -92,7 +104,9 @@ export function SemanticAnalysisPanel({ ingestion }: SemanticAnalysisPanelProps)
             onClick={handleStart}
             type="button"
           >
-            {isStarting ? t('analysis.semantic.starting') : t('analysis.semantic.start')}
+            {isStarting
+              ? t(canResumeConsolidation ? 'analysis.semantic.resuming' : 'analysis.semantic.starting')
+              : t(canResumeConsolidation ? 'analysis.semantic.retryConsolidation' : 'analysis.semantic.start')}
           </button>
         ) : null}
       </div>
@@ -111,7 +125,24 @@ export function SemanticAnalysisPanel({ ingestion }: SemanticAnalysisPanelProps)
 
       {error || status === 'FAILED' ? (
         <div className="mt-5 rounded-xl bg-[#fff1f1] px-4 py-3 text-sm leading-6 text-[#8b3434]" role="alert">
-          {error ?? runView?.run.errors.join(' ') ?? t('analysis.semantic.errors.start')}
+          <p className="font-medium break-words">
+            {failureMessage}
+          </p>
+          {canResumeConsolidation ? (
+            <p className="mt-1 text-xs leading-5 text-[#8b4a4a]">
+              {t('analysis.semantic.resumeHint')}
+            </p>
+          ) : null}
+          {failureCode && runView?.run.errors.length ? (
+            <details className="mt-2 text-xs">
+              <summary className="cursor-pointer font-medium">
+                {t('analysis.semantic.technicalDetails')}
+              </summary>
+              <p className="mt-1 break-words font-mono leading-5">
+                {failureCode}: {runView.run.errors.join(' ')}
+              </p>
+            </details>
+          ) : null}
         </div>
       ) : null}
 

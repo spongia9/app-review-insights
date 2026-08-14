@@ -14,6 +14,7 @@ from app.models import (
     AuditArtifact,
     AuditArtifactType,
     BatchAnalysisResult,
+    ConsolidationCheckpoint,
     ConsolidatedAnalysisResult,
     FindingCandidate,
     FindingCandidateOutput,
@@ -103,29 +104,72 @@ def _validate_finding_scope(
             )
 
 
-def validate_consolidation_lineage(
+def _candidate_review_ids(
+    units: Sequence[ConsolidatedAnalysisResult],
+    *,
+    candidate_type: str,
+) -> Set[str]:
+    if candidate_type == "topic":
+        return {
+            review_id
+            for unit in units
+            for topic in unit.topic_candidates
+            for review_id in topic.review_ids
+        }
+    return {
+        review_id
+        for unit in units
+        for finding in unit.finding_candidates
+        for review_id in finding.supporting_review_ids
+    }
+
+
+def _validate_unique_candidate_ids(consolidated: ConsolidatedAnalysisResult) -> None:
+    for label, candidates in (
+        ("Topic", consolidated.topic_candidates),
+        ("Finding Candidate", consolidated.finding_candidates),
+    ):
+        identifiers = [candidate.id for candidate in candidates]
+        if len(identifiers) != len(set(identifiers)):
+            raise SemanticAnalysisError(
+                "DUPLICATE_CANDIDATE_ID",
+                f"Consolidation returned duplicate {label} IDs.",
+            )
+
+
+def validate_consolidation_units(
     consolidated: ConsolidatedAnalysisResult,
-    batch_results: Sequence[BatchAnalysisResult],
+    source_units: Sequence[ConsolidatedAnalysisResult],
+    review_batch_ids: Dict[str, str],
 ) -> None:
-    allowed_review_ids = {review_id for batch in batch_results for review_id in batch.review_ids}
-    allowed_batch_ids = {batch.batch_id for batch in batch_results}
+    if any(unit.analysis_run_id != consolidated.analysis_run_id for unit in source_units):
+        raise SemanticAnalysisError(
+            "CROSS_RUN_REFERENCE",
+            "Consolidation input contained another analysis run.",
+        )
+    source_topic_review_ids = _candidate_review_ids(source_units, candidate_type="topic")
+    source_finding_review_ids = _candidate_review_ids(source_units, candidate_type="finding")
+    allowed_batch_ids = set(review_batch_ids.values())
     _validate_topic_scope(
         consolidated.topic_candidates,
         analysis_run_id=consolidated.analysis_run_id,
-        allowed_review_ids=allowed_review_ids,
+        allowed_review_ids=source_topic_review_ids,
         allowed_batch_ids=allowed_batch_ids,
     )
     _validate_finding_scope(
         consolidated.finding_candidates,
         analysis_run_id=consolidated.analysis_run_id,
-        allowed_review_ids=allowed_review_ids,
+        allowed_review_ids=source_finding_review_ids,
         allowed_batch_ids=allowed_batch_ids,
     )
-    review_batch_ids = {
-        review_id: batch.batch_id
-        for batch in batch_results
-        for review_id in batch.review_ids
-    }
+    _validate_unique_candidate_ids(consolidated)
+    for topic in consolidated.topic_candidates:
+        expected_batch_ids = {review_batch_ids[review_id] for review_id in topic.review_ids}
+        if topic.batch_id not in expected_batch_ids:
+            raise SemanticAnalysisError(
+                "LINEAGE_LOSS",
+                f"Consolidated Topic {topic.id} does not point to a source batch for its Reviews.",
+            )
     for finding in consolidated.finding_candidates:
         expected_batch_ids = {
             review_batch_ids[review_id]
@@ -136,12 +180,6 @@ def validate_consolidation_lineage(
                 "LINEAGE_LOSS",
                 f"Consolidated Finding {finding.id} does not preserve its Review-to-batch lineage.",
             )
-    source_finding_review_ids = {
-        review_id
-        for batch in batch_results
-        for finding in batch.finding_candidates
-        for review_id in finding.supporting_review_ids
-    }
     consolidated_review_ids = {
         review_id
         for finding in consolidated.finding_candidates
@@ -153,29 +191,6 @@ def validate_consolidation_lineage(
             "LINEAGE_LOSS",
             f"Consolidation dropped source Review IDs: {sorted(missing)}",
         )
-    source_finding_batch_ids = {
-        batch_id
-        for batch in batch_results
-        for finding in batch.finding_candidates
-        for batch_id in finding.source_batch_ids
-    }
-    consolidated_finding_batch_ids = {
-        batch_id
-        for finding in consolidated.finding_candidates
-        for batch_id in finding.source_batch_ids
-    }
-    missing_batch_ids = source_finding_batch_ids - consolidated_finding_batch_ids
-    if missing_batch_ids:
-        raise SemanticAnalysisError(
-            "LINEAGE_LOSS",
-            f"Consolidation dropped source batch IDs: {sorted(missing_batch_ids)}",
-        )
-    source_topic_review_ids = {
-        review_id
-        for batch in batch_results
-        for topic in batch.topic_candidates
-        for review_id in topic.review_ids
-    }
     consolidated_topic_review_ids = {
         review_id for topic in consolidated.topic_candidates for review_id in topic.review_ids
     }
@@ -185,6 +200,107 @@ def validate_consolidation_lineage(
             "LINEAGE_LOSS",
             f"Consolidation dropped Topic source Review IDs: {sorted(missing_topics)}",
         )
+
+
+def validate_consolidation_lineage(
+    consolidated: ConsolidatedAnalysisResult,
+    batch_results: Sequence[BatchAnalysisResult],
+) -> None:
+    source_units = [
+        ConsolidatedAnalysisResult(
+            analysis_run_id=batch.analysis_run_id,
+            topic_candidates=batch.topic_candidates,
+            finding_candidates=batch.finding_candidates,
+        )
+        for batch in batch_results
+    ]
+    review_batch_ids = {
+        review_id: batch.batch_id
+        for batch in batch_results
+        for review_id in batch.review_ids
+    }
+    validate_consolidation_units(consolidated, source_units, review_batch_ids)
+
+
+def repair_consolidation_lineage(
+    consolidated: ConsolidatedAnalysisResult,
+    source_units: Sequence[ConsolidatedAnalysisResult],
+    review_batch_ids: Dict[str, str],
+) -> ConsolidatedAnalysisResult:
+    source_topic_review_ids = _candidate_review_ids(source_units, candidate_type="topic")
+    source_finding_review_ids = _candidate_review_ids(source_units, candidate_type="finding")
+    allowed_batch_ids = set(review_batch_ids.values())
+    _validate_topic_scope(
+        consolidated.topic_candidates,
+        analysis_run_id=consolidated.analysis_run_id,
+        allowed_review_ids=source_topic_review_ids,
+        allowed_batch_ids=allowed_batch_ids,
+    )
+    _validate_finding_scope(
+        consolidated.finding_candidates,
+        analysis_run_id=consolidated.analysis_run_id,
+        allowed_review_ids=source_finding_review_ids,
+        allowed_batch_ids=allowed_batch_ids,
+    )
+
+    topics = []
+    for topic in consolidated.topic_candidates:
+        expected_batch_ids = {review_batch_ids[review_id] for review_id in topic.review_ids}
+        topics.append(
+            topic
+            if topic.batch_id in expected_batch_ids
+            else topic.model_copy(update={"batch_id": sorted(expected_batch_ids)[0]})
+        )
+    findings = []
+    for finding in consolidated.finding_candidates:
+        expected_batch_ids = sorted(
+            {review_batch_ids[review_id] for review_id in finding.supporting_review_ids}
+        )
+        findings.append(
+            finding
+            if set(finding.source_batch_ids) == set(expected_batch_ids)
+            else finding.model_copy(update={"source_batch_ids": expected_batch_ids})
+        )
+
+    missing_topic_ids = source_topic_review_ids - {
+        review_id for topic in topics for review_id in topic.review_ids
+    }
+    for source_topic in (
+        topic for unit in source_units for topic in unit.topic_candidates
+    ):
+        if missing_topic_ids.intersection(source_topic.review_ids):
+            topics.append(source_topic)
+            missing_topic_ids.difference_update(source_topic.review_ids)
+
+    missing_finding_ids = source_finding_review_ids - {
+        review_id for finding in findings for review_id in finding.supporting_review_ids
+    }
+    for source_finding in (
+        finding for unit in source_units for finding in unit.finding_candidates
+    ):
+        if missing_finding_ids.intersection(source_finding.supporting_review_ids):
+            findings.append(source_finding)
+            missing_finding_ids.difference_update(source_finding.supporting_review_ids)
+
+    def unique_ids(candidates: Sequence[OutputT], prefix: str) -> List[OutputT]:
+        seen: Set[str] = set()
+        revised: List[OutputT] = []
+        for index, candidate in enumerate(candidates, start=1):
+            identifier = getattr(candidate, "id")
+            if identifier in seen:
+                identifier = f"{identifier}-{prefix}-{index:03d}"
+                candidate = candidate.model_copy(update={"id": identifier})
+            seen.add(identifier)
+            revised.append(candidate)
+        return revised
+
+    repaired = ConsolidatedAnalysisResult(
+        analysis_run_id=consolidated.analysis_run_id,
+        topic_candidates=unique_ids(topics, "RECOVERED-TOPIC"),
+        finding_candidates=unique_ids(findings, "RECOVERED-FINDING"),
+    )
+    validate_consolidation_units(repaired, source_units, review_batch_ids)
+    return repaired
 
 
 class SemanticAnalysisService:
@@ -212,25 +328,52 @@ class SemanticAnalysisService:
             raise SemanticAnalysisError("NO_VALID_REVIEWS", "No cleaned reviews are available for semantic analysis.")
         selected_language = output_language or result.run.output_language
         resolved_language = resolve_output_language(selected_language, ui_language)
+        resume_consolidation = self._can_resume_consolidation(
+            result,
+            output_language=selected_language,
+            resolved_language=resolved_language,
+        )
+        revisions = list(result.run.revisions)
+        if resume_consolidation:
+            revisions.append("Resuming semantic analysis from the persisted consolidation checkpoint.")
         run = result.run.model_copy(
             update={
                 "status": AnalysisRunStatus.PENDING,
-                "current_stage": PipelineStage.SEMANTIC_TOPIC_DISCOVERY,
-                "progress": 60,
+                "current_stage": (
+                    PipelineStage.TOPIC_CONSOLIDATION
+                    if resume_consolidation
+                    else PipelineStage.SEMANTIC_TOPIC_DISCOVERY
+                ),
+                "progress": 92 if resume_consolidation else 60,
                 "output_language": selected_language,
                 "resolved_output_language": resolved_language,
                 "total_review_count": len(result.reviews),
                 "model_provider": self.settings.llm_provider,
                 "model_name": self.settings.llm_model,
-                "analyzed_review_count": 0,
+                "analyzed_review_count": len(result.reviews) if resume_consolidation else 0,
                 "sampling_strategy": "NONE",
-                "batch_count": ceil(len(result.reviews) / self.settings.llm_review_batch_size),
-                "batch_size": self.settings.llm_review_batch_size,
+                "batch_count": (
+                    result.semantic_analysis.batch_count
+                    if resume_consolidation and result.semantic_analysis
+                    else ceil(len(result.reviews) / self.settings.llm_review_batch_size)
+                ),
+                "batch_size": (
+                    result.semantic_analysis.batch_size
+                    if resume_consolidation and result.semantic_analysis
+                    else self.settings.llm_review_batch_size
+                ),
                 "errors": [],
+                "error_code": None,
+                "revisions": revisions,
                 "finished_at": None,
             }
         )
-        queued = result.model_copy(update={"run": run, "semantic_analysis": None})
+        queued = result.model_copy(
+            update={
+                "run": run,
+                "semantic_analysis": result.semantic_analysis if resume_consolidation else None,
+            }
+        )
         self.store.save(queued)
         return queued
 
@@ -250,25 +393,52 @@ class SemanticAnalysisService:
         resolved_language = resolve_output_language(output_language, ui_language)
         provider: Optional[LLMProvider] = None
         revisions = list(result.run.revisions)
-        batches = create_review_batches(result.reviews, self.settings.llm_review_batch_size)
+        resume_consolidation = self._can_resume_consolidation(
+            result,
+            output_language=output_language,
+            resolved_language=resolved_language,
+        )
+        batches = (
+            []
+            if resume_consolidation
+            else create_review_batches(result.reviews, self.settings.llm_review_batch_size)
+        )
         run = result.run.model_copy(
             update={
                 "status": AnalysisRunStatus.RUNNING,
-                "current_stage": PipelineStage.SEMANTIC_TOPIC_DISCOVERY,
-                "progress": 65,
+                "current_stage": (
+                    PipelineStage.TOPIC_CONSOLIDATION
+                    if resume_consolidation
+                    else PipelineStage.SEMANTIC_TOPIC_DISCOVERY
+                ),
+                "progress": 92 if resume_consolidation else 65,
                 "output_language": output_language,
                 "resolved_output_language": resolved_language,
                 "total_review_count": len(result.reviews),
-                "analyzed_review_count": 0,
+                "analyzed_review_count": len(result.reviews) if resume_consolidation else 0,
                 "sampling_strategy": "NONE",
-                "batch_count": len(batches),
-                "batch_size": self.settings.llm_review_batch_size,
+                "batch_count": (
+                    result.semantic_analysis.batch_count
+                    if resume_consolidation and result.semantic_analysis
+                    else len(batches)
+                ),
+                "batch_size": (
+                    result.semantic_analysis.batch_size
+                    if resume_consolidation and result.semantic_analysis
+                    else self.settings.llm_review_batch_size
+                ),
                 "finished_at": None,
                 "errors": [],
+                "error_code": None,
                 "revisions": revisions,
             }
         )
-        result = result.model_copy(update={"run": run, "semantic_analysis": None})
+        result = result.model_copy(
+            update={
+                "run": run,
+                "semantic_analysis": result.semantic_analysis if resume_consolidation else None,
+            }
+        )
         self.store.save(result)
 
         try:
@@ -281,13 +451,22 @@ class SemanticAnalysisService:
             )
             result = result.model_copy(update={"run": run})
             self.store.save(result)
-            semantic = self._run_batches(
-                result,
-                provider=provider,
-                batches=batches,
-                resolved_language=resolved_language,
-                revisions=revisions,
-            )
+            if resume_consolidation and result.semantic_analysis:
+                semantic = self._resume_consolidation(
+                    result,
+                    provider=provider,
+                    persisted=result.semantic_analysis,
+                    resolved_language=resolved_language,
+                    revisions=revisions,
+                )
+            else:
+                semantic = self._run_batches(
+                    result,
+                    provider=provider,
+                    batches=batches,
+                    resolved_language=resolved_language,
+                    revisions=revisions,
+                )
             completed_status = AnalysisRunStatus.WARNING if run.warnings else AnalysisRunStatus.COMPLETED
             completed_run = run.model_copy(
                 update={
@@ -311,6 +490,7 @@ class SemanticAnalysisService:
                     "status": AnalysisRunStatus.FAILED,
                     "progress": min(latest.run.progress, 95),
                     "errors": [*latest.run.errors, message],
+                    "error_code": getattr(error, "code", "SEMANTIC_ANALYSIS_FAILED"),
                     "revisions": revisions,
                     "finished_at": datetime.now(timezone.utc),
                 }
@@ -319,6 +499,40 @@ class SemanticAnalysisService:
             if isinstance(error, SemanticAnalysisError):
                 raise
             raise SemanticAnalysisError(getattr(error, "code", "SEMANTIC_ANALYSIS_FAILED"), message) from error
+
+    def _can_resume_consolidation(
+        self,
+        result: IngestionResult,
+        *,
+        output_language: AnalysisOutputLanguage,
+        resolved_language: AnalysisOutputLanguage,
+    ) -> bool:
+        semantic = result.semantic_analysis
+        if semantic is None or semantic.consolidated_result is not None:
+            return False
+        if result.run.last_successful_stage not in {
+            PipelineStage.FINDING_EXTRACTION,
+            PipelineStage.TOPIC_CONSOLIDATION,
+        }:
+            return False
+        if semantic.output_language != output_language:
+            return False
+        if semantic.resolved_output_language != resolved_language:
+            return False
+        if semantic.model_provider != (self.settings.llm_provider or ""):
+            return False
+        if semantic.model_name != (self.settings.llm_model or ""):
+            return False
+        expected_review_ids = {review.id for review in result.reviews}
+        persisted_review_ids = {
+            review_id
+            for batch in semantic.batch_results
+            for review_id in batch.review_ids
+        }
+        return (
+            len(semantic.batch_results) == semantic.batch_count
+            and persisted_review_ids == expected_review_ids
+        )
 
     def _run_batches(
         self,
@@ -405,25 +619,14 @@ class SemanticAnalysisService:
             self._persist_partial(result, batch_results, audit_artifacts, PipelineStage.FINDING_EXTRACTION, index, revisions)
 
         self._mark_current_stage(run_id, PipelineStage.TOPIC_CONSOLIDATION, 92)
-        consolidated = self._call_with_retries(
-            provider=provider,
-            response_model=ConsolidatedAnalysisResult,
-            schema_name="ConsolidatedAnalysisResult",
-            system_prompt=load_prompt("topic_consolidation.md"),
-            user_prompt=self._consolidation_prompt(result, batch_results, resolved_language),
-            validator=lambda output: validate_consolidation_lineage(output, batch_results),
-            revisions=revisions,
-            operation="cross-batch consolidation",
-        )
-        audit_artifacts.append(
-            self._audit(run_id, AuditArtifactType.CONSOLIDATION_DRAFT, PipelineStage.TOPIC_CONSOLIDATION, consolidated)
-        )
-        return SemanticAnalysisResult(
+        semantic = SemanticAnalysisResult(
             analysis_run_id=run_id,
             total_review_count=len(result.reviews),
             analyzed_review_count=len(result.reviews),
             batch_count=len(batch_results),
             batch_size=self.settings.llm_review_batch_size,
+            consolidation_group_size=self.settings.llm_consolidation_group_size,
+            model_max_output_tokens=self.settings.llm_max_output_tokens,
             sampling_strategy="NONE",
             model_provider=provider.provider_name,
             model_name=provider.model_name,
@@ -431,9 +634,164 @@ class SemanticAnalysisService:
             output_language=result.run.output_language,
             resolved_output_language=resolved_language,
             batch_results=batch_results,
-            consolidated_result=consolidated,
             audit_artifacts=audit_artifacts,
-            analysis_time=datetime.now(timezone.utc),
+        )
+        return self._run_hierarchical_consolidation(
+            result,
+            provider=provider,
+            semantic=semantic,
+            revisions=revisions,
+        )
+
+    def _resume_consolidation(
+        self,
+        result: IngestionResult,
+        *,
+        provider: LLMProvider,
+        persisted: SemanticAnalysisResult,
+        resolved_language: AnalysisOutputLanguage,
+        revisions: List[str],
+    ) -> SemanticAnalysisResult:
+        semantic = persisted.model_copy(
+            update={
+                "model_provider": provider.provider_name,
+                "model_name": provider.model_name,
+                "output_language": result.run.output_language,
+                "resolved_output_language": resolved_language,
+                "analysis_time": None,
+                "consolidation_group_size": self.settings.llm_consolidation_group_size,
+                "model_max_output_tokens": self.settings.llm_max_output_tokens,
+            }
+        )
+        return self._run_hierarchical_consolidation(
+            result,
+            provider=provider,
+            semantic=semantic,
+            revisions=revisions,
+        )
+
+    def _run_hierarchical_consolidation(
+        self,
+        result: IngestionResult,
+        *,
+        provider: LLMProvider,
+        semantic: SemanticAnalysisResult,
+        revisions: List[str],
+    ) -> SemanticAnalysisResult:
+        run_id = result.analysis_run_id
+        review_batch_ids = {
+            review_id: batch.batch_id
+            for batch in semantic.batch_results
+            for review_id in batch.review_ids
+        }
+        checkpoint = semantic.consolidation_checkpoint
+        if checkpoint and checkpoint.units:
+            units = list(checkpoint.units)
+            round_number = checkpoint.round_number
+        else:
+            units = [
+                ConsolidatedAnalysisResult(
+                    analysis_run_id=run_id,
+                    topic_candidates=batch.topic_candidates,
+                    finding_candidates=batch.finding_candidates,
+                )
+                for batch in semantic.batch_results
+            ]
+            round_number = 0
+
+        audit_artifacts = list(semantic.audit_artifacts)
+        if not units:
+            consolidated = ConsolidatedAnalysisResult(analysis_run_id=run_id)
+        else:
+            while len(units) > 1:
+                round_number += 1
+                next_units: List[ConsolidatedAnalysisResult] = []
+                groups = [
+                    units[index : index + self.settings.llm_consolidation_group_size]
+                    for index in range(0, len(units), self.settings.llm_consolidation_group_size)
+                ]
+                for group_index, source_units in enumerate(groups, start=1):
+                    if len(source_units) == 1:
+                        next_units.append(source_units[0])
+                        continue
+                    operation = f"consolidation round {round_number} group {group_index}"
+                    consolidated_group = self._call_with_retries(
+                        provider=provider,
+                        response_model=ConsolidatedAnalysisResult,
+                        schema_name="ConsolidatedAnalysisResult",
+                        system_prompt=load_prompt("topic_consolidation.md"),
+                        user_prompt=self._consolidation_prompt(
+                            result,
+                            source_units,
+                            semantic.batch_results,
+                            semantic.resolved_output_language,
+                            round_number=round_number,
+                            group_number=group_index,
+                        ),
+                        validator=lambda output, source_units=source_units: validate_consolidation_units(
+                            output,
+                            source_units,
+                            review_batch_ids,
+                        ),
+                        repair=lambda output, error, source_units=source_units: repair_consolidation_lineage(
+                            output,
+                            source_units,
+                            review_batch_ids,
+                        ),
+                        revisions=revisions,
+                        operation=operation,
+                    )
+                    audit_artifacts.append(
+                        self._audit(
+                            run_id,
+                            AuditArtifactType.CONSOLIDATION_DRAFT,
+                            PipelineStage.TOPIC_CONSOLIDATION,
+                            consolidated_group,
+                            f"C-R{round_number:02d}-G{group_index:02d}",
+                        )
+                    )
+                    next_units.append(consolidated_group)
+
+                units = next_units
+                checkpoint = ConsolidationCheckpoint(
+                    analysis_run_id=run_id,
+                    round_number=round_number,
+                    units=units,
+                )
+                semantic = semantic.model_copy(
+                    update={
+                        "consolidation_checkpoint": checkpoint,
+                        "audit_artifacts": list(audit_artifacts),
+                    }
+                )
+                self._persist_consolidation_checkpoint(
+                    result,
+                    semantic,
+                    revisions,
+                    progress=min(99, 92 + round_number * 2),
+                )
+            consolidated = units[0]
+
+        validate_consolidation_lineage(consolidated, semantic.batch_results)
+        if not any(
+            artifact.artifact_type == AuditArtifactType.CONSOLIDATION_DRAFT
+            for artifact in audit_artifacts
+        ):
+            audit_artifacts.append(
+                self._audit(
+                    run_id,
+                    AuditArtifactType.CONSOLIDATION_DRAFT,
+                    PipelineStage.TOPIC_CONSOLIDATION,
+                    consolidated,
+                    "C-SINGLE-BATCH",
+                )
+            )
+        return semantic.model_copy(
+            update={
+                "consolidated_result": consolidated,
+                "audit_artifacts": audit_artifacts,
+                "analysis_time": datetime.now(timezone.utc),
+            }
         )
 
     def _call_with_retries(
@@ -445,22 +803,36 @@ class SemanticAnalysisService:
         system_prompt: str,
         user_prompt: str,
         validator: Callable[[OutputT], None],
+        repair: Optional[Callable[[OutputT, SemanticAnalysisError], OutputT]] = None,
         revisions: List[str],
         operation: str,
     ) -> OutputT:
         last_error: Optional[Exception] = None
         for attempt in range(self.settings.llm_max_retries + 1):
             prompt = user_prompt
-            if attempt:
-                correction = (
-                    "The prior response was invalid. Re-check every ID allowlist and return valid JSON only."
+            if attempt and last_error:
+                error_code = getattr(last_error, "code", type(last_error).__name__)
+                error_message = getattr(last_error, "message", str(last_error))
+                error_details = (
+                    last_error.details
+                    if isinstance(last_error, LLMProviderError)
+                    else {}
                 )
+                correction = {
+                    "reason": error_code,
+                    "message": error_message,
+                    "safe_diagnostics": error_details,
+                    "instruction": (
+                        "Correct the prior response. Return one complete JSON object that matches "
+                        "the supplied schema, uses only allowed IDs, and preserves all source lineage."
+                    ),
+                }
                 try:
                     prompt_payload = json.loads(user_prompt)
                     prompt_payload["correction"] = correction
                     prompt = json.dumps(prompt_payload, ensure_ascii=False)
                 except json.JSONDecodeError:
-                    prompt += f"\n\nCORRECTION: {correction}"
+                    prompt += f"\n\nCORRECTION: {json.dumps(correction, ensure_ascii=False)}"
             try:
                 output = provider.generate_structured(
                     system_prompt=system_prompt,
@@ -468,11 +840,30 @@ class SemanticAnalysisService:
                     response_model=response_model,
                     schema_name=schema_name,
                 )
-                validator(output)
+                try:
+                    validator(output)
+                except SemanticAnalysisError as validation_error:
+                    if repair and validation_error.code in {
+                        "LINEAGE_LOSS",
+                        "DUPLICATE_CANDIDATE_ID",
+                    }:
+                        output = repair(output, validation_error)
+                        revisions.append(
+                            f"Deterministic lineage repair applied for {operation}: "
+                            f"{validation_error.code}."
+                        )
+                    else:
+                        raise
                 return output
             except (LLMProviderError, SemanticAnalysisError, ValidationError) as error:
                 last_error = error
-                revisions.append(f"Retry {attempt + 1} for {operation}: {getattr(error, 'code', type(error).__name__)}")
+                error_code = getattr(error, "code", type(error).__name__)
+                diagnostic_suffix = ""
+                if isinstance(error, LLMProviderError) and error.details:
+                    diagnostic_suffix = f" {json.dumps(error.details, ensure_ascii=False, sort_keys=True)}"
+                revisions.append(
+                    f"Attempt {attempt + 1} failed for {operation}: {error_code}.{diagnostic_suffix}"
+                )
                 if isinstance(error, LLMProviderError) and not error.retryable:
                     break
                 if attempt >= self.settings.llm_max_retries:
@@ -499,6 +890,8 @@ class SemanticAnalysisService:
             analyzed_review_count=analyzed_count,
             batch_count=ceil(len(base_result.reviews) / self.settings.llm_review_batch_size),
             batch_size=self.settings.llm_review_batch_size,
+            consolidation_group_size=self.settings.llm_consolidation_group_size,
+            model_max_output_tokens=self.settings.llm_max_output_tokens,
             sampling_strategy="NONE",
             model_provider=base_result.run.model_provider or "unknown",
             model_name=base_result.run.model_name or "unknown",
@@ -525,6 +918,27 @@ class SemanticAnalysisService:
             }
         )
         self.store.save(base_result.model_copy(update={"run": run, "semantic_analysis": semantic}))
+
+    def _persist_consolidation_checkpoint(
+        self,
+        base_result: IngestionResult,
+        semantic: SemanticAnalysisResult,
+        revisions: List[str],
+        *,
+        progress: int,
+    ) -> None:
+        latest = self.store.get(base_result.analysis_run_id) or base_result
+        run = latest.run.model_copy(
+            update={
+                "status": AnalysisRunStatus.RUNNING,
+                "current_stage": PipelineStage.TOPIC_CONSOLIDATION,
+                "last_successful_stage": PipelineStage.TOPIC_CONSOLIDATION,
+                "progress": progress,
+                "analyzed_review_count": len(latest.reviews),
+                "revisions": list(revisions),
+            }
+        )
+        self.store.save(latest.model_copy(update={"run": run, "semantic_analysis": semantic}))
 
     def _mark_current_stage(self, analysis_run_id: str, stage: PipelineStage, progress: int) -> None:
         latest = self.store.get(analysis_run_id)
@@ -574,14 +988,57 @@ class SemanticAnalysisService:
         }
         return json.dumps(payload, ensure_ascii=False)
 
-    def _consolidation_prompt(self, result: IngestionResult, batches: Sequence[BatchAnalysisResult], language: AnalysisOutputLanguage) -> str:
+    def _consolidation_prompt(
+        self,
+        result: IngestionResult,
+        source_units: Sequence[ConsolidatedAnalysisResult],
+        batches: Sequence[BatchAnalysisResult],
+        language: AnalysisOutputLanguage,
+        *,
+        round_number: int,
+        group_number: int,
+    ) -> str:
+        source_topic_review_ids = sorted(
+            _candidate_review_ids(source_units, candidate_type="topic")
+        )
+        source_finding_review_ids = sorted(
+            _candidate_review_ids(source_units, candidate_type="finding")
+        )
+        review_batch_ids = {
+            review_id: batch.batch_id
+            for batch in batches
+            for review_id in batch.review_ids
+        }
+        allowed_review_ids = sorted(set(source_topic_review_ids) | set(source_finding_review_ids))
+        allowed_batch_ids = sorted({review_batch_ids[review_id] for review_id in allowed_review_ids})
+        first_topic = next(
+            (topic for unit in source_units for topic in unit.topic_candidates),
+            None,
+        )
+        first_finding = next(
+            (finding for unit in source_units for finding in unit.finding_candidates),
+            None,
+        )
         payload = {
             "analysis_run_id": result.analysis_run_id,
             "analysis_goal": result.run.analysis_goal,
             "output_language": language.value,
-            "allowed_review_ids": [review.id for review in result.reviews],
-            "allowed_batch_ids": [batch.batch_id for batch in batches],
-            "batch_results": [batch.model_dump(mode="json") for batch in batches],
+            "consolidation_round": round_number,
+            "consolidation_group": group_number,
+            "allowed_review_ids": allowed_review_ids,
+            "allowed_topic_review_ids": source_topic_review_ids,
+            "allowed_finding_review_ids": source_finding_review_ids,
+            "review_to_batch": {
+                review_id: review_batch_ids[review_id]
+                for review_id in allowed_review_ids
+            },
+            "allowed_batch_ids": allowed_batch_ids,
+            "source_results": [unit.model_dump(mode="json") for unit in source_units],
+            "output_shape_example": {
+                "analysis_run_id": result.analysis_run_id,
+                "topic_candidates": [first_topic.model_dump(mode="json")] if first_topic else [],
+                "finding_candidates": [first_finding.model_dump(mode="json")] if first_finding else [],
+            },
             "json_schema": ConsolidatedAnalysisResult.model_json_schema(),
         }
         return json.dumps(payload, ensure_ascii=False)
@@ -613,6 +1070,8 @@ def semantic_summary(semantic: SemanticAnalysisResult) -> SemanticAnalysisSummar
         analyzed_review_count=semantic.analyzed_review_count,
         batch_count=semantic.batch_count,
         batch_size=semantic.batch_size,
+        consolidation_group_size=semantic.consolidation_group_size,
+        model_max_output_tokens=semantic.model_max_output_tokens,
         sampling_strategy=semantic.sampling_strategy,
         model_provider=semantic.model_provider,
         model_name=semantic.model_name,
