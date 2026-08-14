@@ -70,6 +70,8 @@ The GitHub project should preserve a complete commit history to show the candida
 
 Phase 3 adds runtime, model-driven semantic analysis after deterministic ingestion and cleaning. The configured DeepSeek model receives bounded batches of normalized Review fields plus the optional analysis goal. It dynamically discovers dataset-specific Topics, extracts structured `FindingCandidate` user problems, and performs a model-driven cross-batch consolidation. These are explicitly unvalidated candidates; Phase 4 evidence support/conflict/sufficiency evaluation is not implemented yet.
 
+The final runtime acceptance evidence is recorded in [`docs/PHASE3_ACCEPTANCE.md`](docs/PHASE3_ACCEPTANCE.md).
+
 ### Runtime LLM configuration
 
 Configure the untracked project-root `.env`:

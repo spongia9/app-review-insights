@@ -128,6 +128,7 @@ Done Criteria:
 - Topic/Finding drafts are persisted as audit artifacts.
 - Large multi-batch inputs do not depend on one unbounded consolidation response, and compatible failures resume without repeating completed batch analysis.
 - Mocked deterministic tests pass; a configured real-provider smoke run is documented when credentials/network are available.
+- Final acceptance covers the official U.S. Workout dataset, controlled Analysis Goal comparison, unseen music-domain input, mixed-language input, Review-ID rejection, 200+ Review consolidation, provider failures, human spot checks, and a real browser flow; evidence is recorded in `docs/PHASE3_ACCEPTANCE.md`.
 
 ### Phase 4 — Evidence
 

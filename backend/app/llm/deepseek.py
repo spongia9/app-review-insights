@@ -77,6 +77,12 @@ class DeepSeekProvider(LLMProvider):
             raise LLMProviderError("LLM_TIMEOUT", "The LLM request timed out.") from error
         except httpx.HTTPStatusError as error:
             status = error.response.status_code
+            if status in {401, 403}:
+                raise LLMProviderError(
+                    "LLM_AUTHENTICATION_FAILED",
+                    f"The LLM provider rejected the configured credentials with HTTP {status}.",
+                    retryable=False,
+                ) from error
             retryable = status == 429 or status >= 500
             raise LLMProviderError(
                 "LLM_PROVIDER_ERROR",

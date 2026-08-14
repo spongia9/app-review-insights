@@ -114,6 +114,7 @@
     "semantic": {
       "title": "AI语义分析",
       "description": "使用运行时 LLM 动态发现当前数据集的主题，并提取保留真实评论 ID、尚未完成证据验证的用户问题候选。",
+      "completed": "分析完成",
       "start": "开始 AI 语义分析",
       "starting": "正在启动…",
       "retryConsolidation": "重试跨批次合并",
@@ -127,6 +128,7 @@
         "LLM_SCHEMA_VALIDATION_FAILED": "模型返回的 JSON 不符合语义分析数据契约。",
         "LLM_CONTENT_FILTERED": "模型服务过滤了本次结构化响应。",
         "LLM_INSUFFICIENT_RESOURCE": "模型服务当前容量不足，请稍后从检查点重试。",
+        "LLM_AUTHENTICATION_FAILED": "模型服务拒绝了当前 API 凭据，请检查 LLM_API_KEY 后重试。",
         "LLM_TIMEOUT": "模型请求超时，请稍后从检查点重试。",
         "LLM_PROVIDER_ERROR": "模型服务请求失败，请检查服务状态、额度或网络。",
         "LINEAGE_LOSS": "合并结果未完整保留评论证据链，系统已拒绝该结果。"

@@ -1,0 +1,33 @@
+{
+  "reviews": [
+    {"id":"MU001","title":"Downloads vanish offline","text":"Albums marked as downloaded disappear as soon as airplane mode is enabled.","rating":1,"version":"7.2.0","language":"en-US","date":"2026-07-01"},
+    {"id":"MU002","title":"Offline songs stop halfway","text":"Downloaded songs stop after thirty seconds when there is no network connection.","rating":2,"version":"7.2.0","language":"en-US","date":"2026-07-02"},
+    {"id":"MU003","title":"Keeps streaming downloads","text":"The app uses mobile data even when I select a downloaded playlist.","rating":2,"version":"7.2.1","language":"en-US","date":"2026-07-03"},
+    {"id":"MU004","title":"Cannot verify downloads","text":"There is no clear indicator showing which tracks are actually available offline.","rating":3,"version":"7.2.1","language":"en-US","date":"2026-07-04"},
+    {"id":"MU005","title":"Offline mode forgets progress","text":"Playback position resets when I reconnect after listening to downloaded music offline.","rating":2,"version":"7.2.1","language":"en-US","date":"2026-07-05"},
+
+    {"id":"MU006","title":"Lyrics are late","text":"The synchronized lyrics are several lines behind the vocals on most songs.","rating":2,"version":"7.2.0","language":"en-US","date":"2026-07-06"},
+    {"id":"MU007","title":"Wrong lyrics version","text":"Live recordings often display lyrics for the studio version and do not match the audio.","rating":2,"version":"7.2.0","language":"en-US","date":"2026-07-07"},
+    {"id":"MU008","title":"Lyrics disappear","text":"Opening the full-screen player sometimes makes the lyrics panel completely blank.","rating":1,"version":"7.2.1","language":"en-US","date":"2026-07-08"},
+    {"id":"MU009","title":"No lyrics search","text":"I cannot search within lyrics to find the part of a long song I want.","rating":3,"version":"7.2.1","language":"en-US","date":"2026-07-09"},
+    {"id":"MU010","title":"Translation covers original","text":"Translated lyrics replace the original text instead of letting me view both together.","rating":3,"version":"7.2.1","language":"en-US","date":"2026-07-10"},
+
+    {"id":"MU011","title":"Playlist order changes","text":"My carefully arranged playlist is reordered after I add a new track.","rating":1,"version":"7.2.0","language":"en-US","date":"2026-07-11"},
+    {"id":"MU012","title":"Collaborative edits lost","text":"Songs added by friends vanish from our collaborative playlist after refresh.","rating":2,"version":"7.2.0","language":"en-US","date":"2026-07-12"},
+    {"id":"MU013","title":"Duplicate playlist tracks","text":"Adding an album can create duplicate tracks without any warning.","rating":2,"version":"7.2.1","language":"en-US","date":"2026-07-13"},
+    {"id":"MU014","title":"Folders are missing","text":"I have many playlists but cannot group them into folders on mobile.","rating":3,"version":"7.2.1","language":"en-US","date":"2026-07-14"},
+    {"id":"MU015","title":"Deleted playlist returned","text":"A playlist I deleted came back after signing in on another device.","rating":2,"version":"7.2.1","language":"en-US","date":"2026-07-15"},
+
+    {"id":"MU016","title":"Bluetooth sounds compressed","text":"Audio becomes noticeably muffled when switching from wired headphones to my car Bluetooth.","rating":2,"version":"7.2.0","language":"en-US","date":"2026-07-16"},
+    {"id":"MU017","title":"Volume changes between songs","text":"Some tracks are much louder than others even with volume normalization enabled.","rating":2,"version":"7.2.0","language":"en-US","date":"2026-07-17"},
+    {"id":"MU018","title":"Lossless setting ignored","text":"The player reports standard quality although lossless streaming is selected on Wi-Fi.","rating":2,"version":"7.2.1","language":"en-US","date":"2026-07-18"},
+    {"id":"MU019","title":"Equalizer clips bass","text":"Turning on the bass equalizer causes obvious distortion at moderate volume.","rating":1,"version":"7.2.1","language":"en-US","date":"2026-07-19"},
+    {"id":"MU020","title":"Gapless playback has gaps","text":"Live albums pause briefly between tracks even when gapless playback is enabled.","rating":2,"version":"7.2.1","language":"en-US","date":"2026-07-20"},
+
+    {"id":"MU021","title":"Recommendations repeat","text":"The daily recommendations keep showing the same artists I already skipped.","rating":2,"version":"7.2.0","language":"en-US","date":"2026-07-21"},
+    {"id":"MU022","title":"Discovery ignores genres","text":"I ask for jazz and classical music but discovery mostly recommends pop playlists.","rating":2,"version":"7.2.0","language":"en-US","date":"2026-07-22"},
+    {"id":"MU023","title":"Dislikes do not work","text":"Songs I dislike continue to appear in radio stations and personalized mixes.","rating":1,"version":"7.2.1","language":"en-US","date":"2026-07-23"},
+    {"id":"MU024","title":"Too few new artists","text":"The recommendation feed favors familiar stars and rarely introduces independent artists.","rating":3,"version":"7.2.1","language":"en-US","date":"2026-07-24"},
+    {"id":"MU025","title":"Mood mix is inaccurate","text":"The focus mix frequently includes energetic tracks that interrupt concentration.","rating":2,"version":"7.2.1","language":"en-US","date":"2026-07-25"}
+  ]
+}

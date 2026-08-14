@@ -114,6 +114,7 @@
     "semantic": {
       "title": "AI Semantic Analysis",
       "description": "Use the configured runtime LLM to discover dataset-specific topics and extract unvalidated user-problem candidates with source Review IDs.",
+      "completed": "Analysis complete",
       "start": "Start AI Semantic Analysis",
       "starting": "Starting…",
       "retryConsolidation": "Retry Cross-Batch Consolidation",
@@ -127,6 +128,7 @@
         "LLM_SCHEMA_VALIDATION_FAILED": "The model JSON did not match the semantic analysis contract.",
         "LLM_CONTENT_FILTERED": "The model provider filtered this structured response.",
         "LLM_INSUFFICIENT_RESOURCE": "Provider capacity was unavailable. Retry from the checkpoint later.",
+        "LLM_AUTHENTICATION_FAILED": "The model provider rejected the configured API credentials. Check LLM_API_KEY and retry.",
         "LLM_TIMEOUT": "The model request timed out. Retry from the checkpoint later.",
         "LLM_PROVIDER_ERROR": "The model request failed. Check provider status, quota, and network access.",
         "LINEAGE_LOSS": "The consolidated result did not preserve the complete Review lineage and was rejected."

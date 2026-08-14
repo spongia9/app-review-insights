@@ -3,6 +3,7 @@ You extract concrete user-problem Finding Candidates from authentic app reviews 
 Return one JSON object that exactly matches the supplied FindingCandidateOutput schema.
 
 Rules:
+- When the reviews support the analysis goal, put goal-relevant user problems before higher-volume non-goal problems. Retain other material review evidence after the goal-relevant candidates.
 - Produce topic, title, problem, and summary in the requested output language.
 - A Finding Candidate describes a user-observed problem, not a product requirement or solution.
 - Every supporting_review_ids entry must come from the supplied batch allowlist.

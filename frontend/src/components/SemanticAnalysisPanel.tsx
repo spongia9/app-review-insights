@@ -83,6 +83,12 @@ export function SemanticAnalysisPanel({ ingestion }: SemanticAnalysisPanelProps)
 
   const summary = runView?.semantic_analysis
   const failureCode = runView?.run.error_code
+  const stageLabel =
+    status === 'COMPLETED' || status === 'WARNING'
+      ? t('analysis.semantic.completed')
+      : runView
+        ? t(`analysis.stages.${runView.run.current_stage}`, { defaultValue: runView.run.current_stage })
+        : ''
   const failureMessage = failureCode
     ? t(`analysis.semantic.errorCodes.${failureCode}`, {
         defaultValue: t('analysis.semantic.errors.start'),
@@ -114,7 +120,7 @@ export function SemanticAnalysisPanel({ ingestion }: SemanticAnalysisPanelProps)
       {runView ? (
         <div className="mt-5 border-y border-[#d7e3ee] py-4" data-testid="semantic-progress">
           <div className="flex items-center justify-between gap-4 text-xs text-[#5f748a]">
-            <span>{t(`analysis.stages.${runView.run.current_stage}`, { defaultValue: runView.run.current_stage })}</span>
+            <span>{stageLabel}</span>
             <span className="font-mono">{runView.run.progress}%</span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#dce7f1]">

@@ -554,6 +554,41 @@ def test_hierarchical_consolidation_bounds_group_size_and_preserves_all_ids(tmp_
     ]
 
 
+def test_200_plus_reviews_consolidate_repeated_batch_topics_without_lineage_loss(tmp_path: Path) -> None:
+    provider = DynamicMockProvider()
+    reviews = [
+        review(f"R{index:06d}", f"Advertisement interruption problem {index}")
+        for index in range(1, 206)
+    ]
+    semantic_service = service(
+        tmp_path,
+        provider,
+        batch_size=25,
+        group_size=4,
+        reviews=reviews,
+    )
+
+    completed = semantic_service.analyze(
+        RUN_ID,
+        output_language=AnalysisOutputLanguage.EN_US,
+        ui_language="en-US",
+    )
+
+    semantic = completed.semantic_analysis
+    assert semantic is not None
+    assert semantic.batch_count == 9
+    assert semantic.analyzed_review_count == 205
+    assert semantic.consolidated_result is not None
+    assert len(semantic.consolidated_result.topic_candidates) == 1
+    assert len(semantic.consolidated_result.finding_candidates) == 1
+    assert semantic.consolidated_result.topic_candidates[0].review_ids == [
+        item.id for item in reviews
+    ]
+    assert semantic.consolidated_result.finding_candidates[0].supporting_review_ids == [
+        item.id for item in reviews
+    ]
+
+
 def test_failed_consolidation_resumes_without_reanalyzing_batches(tmp_path: Path) -> None:
     original_provider = DynamicMockProvider()
     reviews = [
@@ -731,6 +766,9 @@ def test_provider_failures_respect_retry_limit(tmp_path: Path, code: str, messag
     assert persisted.run.status == AnalysisRunStatus.FAILED
     assert persisted.run.error_code == code
     assert persisted.run.last_successful_stage == PipelineStage.CLEANING_AND_NORMALIZATION
+    assert len(persisted.reviews) == 3
+    assert persisted.semantic_analysis is None
+    assert persisted.run.errors[-1] == message
     assert len(persisted.run.revisions) == 3
 
 
@@ -746,6 +784,37 @@ def test_non_retryable_provider_configuration_error_stops_immediately(tmp_path: 
             ui_language="en-US",
         )
     assert provider.call_count == 1
+
+
+def test_invalid_api_key_failure_preserves_clean_reviews_without_fake_results(tmp_path: Path) -> None:
+    provider = FailureProvider(
+        LLMProviderError(
+            "LLM_AUTHENTICATION_FAILED",
+            "The LLM provider rejected the configured credentials with HTTP 401.",
+            retryable=False,
+        )
+    )
+    semantic_service = service(tmp_path, provider, retries=3)
+
+    with pytest.raises(SemanticAnalysisError) as error:
+        semantic_service.analyze(
+            RUN_ID,
+            output_language=AnalysisOutputLanguage.EN_US,
+            ui_language="en-US",
+        )
+
+    assert error.value.code == "LLM_AUTHENTICATION_FAILED"
+    assert provider.call_count == 1
+    persisted = semantic_service.store.get(RUN_ID)
+    assert persisted is not None
+    assert persisted.run.status == AnalysisRunStatus.FAILED
+    assert persisted.run.error_code == "LLM_AUTHENTICATION_FAILED"
+    assert persisted.run.last_successful_stage == PipelineStage.CLEANING_AND_NORMALIZATION
+    assert len(persisted.reviews) == 3
+    assert persisted.semantic_analysis is None
+    assert persisted.run.errors == [
+        "The LLM provider rejected the configured credentials with HTTP 401."
+    ]
 
 
 def test_truncated_output_is_not_retried_unchanged(tmp_path: Path) -> None:
@@ -785,6 +854,7 @@ def test_invalid_review_id_receives_correction_retry(tmp_path: Path) -> None:
     assert completed.run.status == AnalysisRunStatus.COMPLETED
     assert provider.topic_attempts == 2
     assert any("INVALID_REVIEW_ID" in revision for revision in completed.run.revisions)
+    assert "R999999" not in completed.model_dump_json()
 
 
 def test_deepseek_provider_timeout_and_invalid_structured_output(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -821,6 +891,23 @@ def test_deepseek_provider_timeout_and_invalid_structured_output(monkeypatch: py
             schema_name="TopicDiscoveryOutput",
         )
     assert timeout_error.value.code == "LLM_TIMEOUT"
+
+    class UnauthorizedClient(TimeoutClient):
+        def post(self, *_: object, **__: object) -> object:
+            request = __import__("httpx").Request("POST", "https://api.deepseek.com/chat/completions")
+            return __import__("httpx").Response(401, request=request)
+
+    monkeypatch.setattr("app.llm.deepseek.httpx.Client", UnauthorizedClient)
+    with pytest.raises(LLMProviderError) as unauthorized_error:
+        provider.generate_structured(
+            system_prompt="json",
+            user_prompt="{}",
+            response_model=TopicDiscoveryOutput,
+            schema_name="TopicDiscoveryOutput",
+        )
+    assert unauthorized_error.value.code == "LLM_AUTHENTICATION_FAILED"
+    assert unauthorized_error.value.retryable is False
+    assert "401" in unauthorized_error.value.message
 
     class Response:
         def raise_for_status(self) -> None:
