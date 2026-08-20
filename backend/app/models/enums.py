@@ -56,6 +56,12 @@ class AuditArtifactType(StringEnum):
     FINDING_DRAFT = "FINDING_DRAFT"
     CONSOLIDATION_DRAFT = "CONSOLIDATION_DRAFT"
     EVIDENCE_VALIDATION = "EVIDENCE_VALIDATION"
+    REQUIREMENT_DRAFT = "REQUIREMENT_DRAFT"
+    REQUIREMENT_REVISION = "REQUIREMENT_REVISION"
+    VERSION_PLAN_DRAFT = "VERSION_PLAN_DRAFT"
+    STRUCTURED_PRD_DRAFT = "STRUCTURED_PRD_DRAFT"
+    TEST_CASE_DRAFT = "TEST_CASE_DRAFT"
+    VALIDATION_AUDIT = "VALIDATION_AUDIT"
 
 
 class EvidenceStance(StringEnum):
@@ -84,3 +90,29 @@ class ArtifactValidationStatus(StringEnum):
     REVISED = "REVISED"
     REJECTED = "REJECTED"
     ASSUMPTION = "ASSUMPTION"
+
+
+class RequirementPriority(StringEnum):
+    P0 = "P0"
+    P1 = "P1"
+    P2 = "P2"
+    P3 = "P3"
+
+
+class ImpactLevel(StringEnum):
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+
+
+class RequirementGroundingVerdict(StringEnum):
+    GROUNDED = "GROUNDED"
+    PARTIAL = "PARTIAL"
+    UNGROUNDED = "UNGROUNDED"
+
+
+class TestCaseType(StringEnum):
+    FUNCTIONAL = "FUNCTIONAL"
+    REGRESSION = "REGRESSION"
+    NEGATIVE = "NEGATIVE"
+    EDGE_CASE = "EDGE_CASE"

@@ -19,6 +19,7 @@ import type {
   IngestionResult,
   TopicCandidate,
 } from '../types/analysis'
+import { ProductPlanningPanel } from './ProductPlanningPanel'
 
 interface SemanticAnalysisPanelProps {
   ingestion: IngestionResult
@@ -394,6 +395,13 @@ export function SemanticAnalysisPanel({ ingestion }: SemanticAnalysisPanelProps)
             })}
           </div>
         </section>
+      ) : null}
+      {evidenceSummary && validatedFindings.length ? (
+        <ProductPlanningPanel
+          analysisRunId={ingestion.analysis_run_id}
+          findings={validatedFindings}
+          reviews={ingestion.reviews}
+        />
       ) : null}
     </section>
   )

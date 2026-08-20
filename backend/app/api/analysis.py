@@ -2,6 +2,7 @@ from threading import Thread
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from app.models import (
@@ -10,6 +11,7 @@ from app.models import (
     FindingsView,
     FindingCandidatesView,
     IngestionResult,
+    ProductPlanningView,
     ReviewsView,
     TopicsView,
 )
@@ -18,10 +20,13 @@ from app.services import (
     EvidenceValidationError,
     EvidenceValidationService,
     IngestionService,
+    ProductPlanningError,
+    ProductPlanningService,
     SemanticAnalysisError,
     SemanticAnalysisService,
 )
 from app.services.evidence import evidence_summary
+from app.services.product_planning import product_planning_summary
 from app.services.semantic import semantic_summary
 from app.storage import RunStore
 
@@ -44,6 +49,10 @@ class EvidenceValidationRequest(BaseModel):
     candidate_ids: Optional[List[str]] = None
 
 
+class ProductPlanningRequest(BaseModel):
+    pass
+
+
 def get_service(request: Request) -> IngestionService:
     return request.app.state.ingestion_service
 
@@ -58,6 +67,10 @@ def get_semantic_service(request: Request) -> SemanticAnalysisService:
 
 def get_evidence_service(request: Request) -> EvidenceValidationService:
     return request.app.state.evidence_validation_service
+
+
+def get_product_planning_service(request: Request) -> ProductPlanningService:
+    return request.app.state.product_planning_service
 
 
 def raise_http_error(error: IngestionError) -> None:
@@ -132,6 +145,7 @@ def get_analysis_run(analysis_run_id: str, request: Request) -> AnalysisRunView:
         statistics=result.statistics,
         semantic_analysis=(semantic_summary(result.semantic_analysis) if result.semantic_analysis else None),
         evidence_validation=(evidence_summary(result.evidence_validation) if result.evidence_validation else None),
+        product_planning=(product_planning_summary(result.product_planning) if result.product_planning else None),
     )
 
 
@@ -190,6 +204,7 @@ def start_semantic_analysis(
         statistics=queued.statistics,
         semantic_analysis=(semantic_summary(queued.semantic_analysis) if queued.semantic_analysis else None),
         evidence_validation=(evidence_summary(queued.evidence_validation) if queued.evidence_validation else None),
+        product_planning=(product_planning_summary(queued.product_planning) if queued.product_planning else None),
     )
 
 
@@ -234,6 +249,7 @@ def start_evidence_validation(
         statistics=queued.statistics,
         semantic_analysis=(semantic_summary(queued.semantic_analysis) if queued.semantic_analysis else None),
         evidence_validation=(evidence_summary(queued.evidence_validation) if queued.evidence_validation else None),
+        product_planning=(product_planning_summary(queued.product_planning) if queued.product_planning else None),
     )
 
 
@@ -271,4 +287,73 @@ def get_findings(analysis_run_id: str, request: Request) -> FindingsView:
         analysis_run_id=analysis_run_id,
         findings=evidence.findings if evidence else [],
         audits=evidence.audits if evidence else [],
+    )
+
+
+def _run_product_planning(
+    service: ProductPlanningService,
+    analysis_run_id: str,
+) -> None:
+    try:
+        service.generate(analysis_run_id)
+    except ProductPlanningError:
+        # The service persists terminal failure details for polling clients.
+        return
+
+
+@router.post("/{analysis_run_id}/product-plan", response_model=AnalysisRunView, status_code=202)
+def start_product_planning(
+    analysis_run_id: str,
+    _: ProductPlanningRequest,
+    request: Request,
+) -> AnalysisRunView:
+    try:
+        queued = get_product_planning_service(request).queue(analysis_run_id)
+    except ProductPlanningError as error:
+        raise HTTPException(
+            status_code=error.status_code,
+            detail={"code": error.code, "message": error.message},
+        ) from error
+    Thread(
+        target=_run_product_planning,
+        args=(get_product_planning_service(request), analysis_run_id),
+        daemon=True,
+        name=f"product-plan-{analysis_run_id}",
+    ).start()
+    return AnalysisRunView(
+        analysis_run_id=analysis_run_id,
+        run=queued.run,
+        provider=queued.provider,
+        statistics=queued.statistics,
+        semantic_analysis=(semantic_summary(queued.semantic_analysis) if queued.semantic_analysis else None),
+        evidence_validation=(evidence_summary(queued.evidence_validation) if queued.evidence_validation else None),
+        product_planning=(product_planning_summary(queued.product_planning) if queued.product_planning else None),
+    )
+
+
+@router.get("/{analysis_run_id}/product-plan", response_model=ProductPlanningView)
+def get_product_plan(analysis_run_id: str, request: Request) -> ProductPlanningView:
+    result = require_result(analysis_run_id, request)
+    return ProductPlanningView(
+        analysis_run_id=analysis_run_id,
+        product_planning=result.product_planning,
+    )
+
+
+@router.get("/{analysis_run_id}/product-plan/prd.md", response_class=Response)
+def download_product_prd(analysis_run_id: str, request: Request) -> Response:
+    result = require_result(analysis_run_id, request)
+    artifact = result.product_planning.prd_artifact if result.product_planning else None
+    if artifact is None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "PRD_NOT_AVAILABLE",
+                "message": "The validated PRD artifact is not available for this analysis run.",
+            },
+        )
+    return Response(
+        content=artifact.rendered_markdown,
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="PRD.md"'},
     )

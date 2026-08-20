@@ -41,6 +41,7 @@ temp/
 *.whl
 *.tsbuildinfo
 artifacts/local/
+backend/data/artifacts/
 uploads/
 
 # Editors and operating systems

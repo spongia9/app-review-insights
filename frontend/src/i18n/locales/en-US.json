@@ -7,7 +7,8 @@
     "phase": "Phase 1 · Shell",
     "phase2": "Phase 2 · Data",
     "phase3": "Phase 3 · Semantic analysis",
-    "phase4": "Phase 4 · Evidence validation"
+    "phase4": "Phase 4 · Evidence validation",
+    "phase5": "Phase 5 · Product planning"
   },
   "hero": {
     "eyebrow": "Evidence-grounded product planning",
@@ -81,8 +82,8 @@
       "title": "New Analysis",
       "description": "Import authentic or supplied user reviews and run deterministic validation, normalization, cleaning, and deduplication before semantic analysis begins.",
       "scopeTitle": "Current phase scope",
-      "scopeDescription": "This phase covers runtime topic discovery, Finding Candidates, and evidence validation. Requirements, PRDs, and Test Cases remain out of scope.",
-      "footer": "Runtime semantic analysis and evidence validation"
+      "scopeDescription": "The current workflow covers review processing, runtime semantic analysis, evidence validation, and traceable Requirements, release planning, PRD, and Test Case generation.",
+      "footer": "Evidence-grounded product planning"
     },
     "form": {
       "title": "Analysis input",
@@ -113,7 +114,12 @@
       "TOPIC_CONSOLIDATION": "Consolidating cross-batch topics",
       "EVIDENCE_VALIDATION": "Validating Review IDs and run scope",
       "CONFLICT_ANALYSIS": "Evaluating supporting and conflicting evidence",
-      "FINDING_FINALIZATION": "Finalizing validated Findings"
+      "FINDING_FINALIZATION": "Finalizing validated Findings",
+      "REQUIREMENT_GENERATION": "Generating and validating Requirements",
+      "VERSION_PLANNING": "Planning releases",
+      "PRD_GENERATION": "Generating the structured PRD",
+      "TEST_CASE_GENERATION": "Generating traceable Test Cases",
+      "TRACEABILITY_VALIDATION": "Validating the complete evidence chain"
     },
     "semantic": {
       "title": "AI Semantic Analysis",
@@ -192,6 +198,52 @@
       },
       "errors": {
         "start": "Evidence validation could not be started."
+      }
+    },
+    "planning": {
+      "title": "Product Planning Workspace",
+      "description": "Generate Requirements, a Version Plan, a structured PRD, and Test Cases only from validated Findings while deterministic checks preserve evidence inheritance.",
+      "start": "Generate Product Plan",
+      "starting": "Starting…",
+      "retry": "Retry Product Planning",
+      "completed": "Product Planning Completed",
+      "noEligibleFindings": "No sufficiently supported Finding is eligible for formal product planning. The system will not force Requirements from weak, conflicted, or unsupported evidence.",
+      "failureSafety": "Validated Findings remain preserved. The system never substitutes fabricated Requirements, PRDs, or Test Cases for a failed result.",
+      "notApplicable": "N/A",
+      "acceptanceCriteria": "Acceptance Criteria",
+      "info": {
+        "requirements": "Requirements",
+        "versions": "Versions",
+        "tests": "Test Cases",
+        "traceability": "Overall traceability",
+        "model": "Generation model"
+      },
+      "requirements": {
+        "title": "Product Requirements",
+        "evidenceCount": "{{count}} source Reviews",
+        "viewFindings": "View source Findings ({{count}})",
+        "viewReviews": "View source Reviews ({{count}})"
+      },
+      "versionPlan": {
+        "title": "Version Plan",
+        "rationale": "Rationale"
+      },
+      "prd": {
+        "title": "PRD",
+        "background": "Background",
+        "scope": "Analysis scope",
+        "download": "Download PRD.md",
+        "viewMarkdown": "View deterministically rendered PRD Markdown"
+      },
+      "testCases": {
+        "title": "Test Cases",
+        "requirement": "Requirement",
+        "expected": "Expected result",
+        "sourceCount": "{{count}} source Reviews"
+      },
+      "errors": {
+        "start": "Product planning could not be started.",
+        "poll": "Product planning status could not be refreshed."
       }
     },
     "sources": {

@@ -922,6 +922,32 @@ TestCase[]
 
 The model may not create independent Review evidence. A TestCase inherits its allowed evidence through `TestCase -> Requirement -> Finding -> Review`. Stored `source_review_ids` default to the Requirement evidence set and, when narrowed, must be a non-empty subset. Broken or cross-run chains are rejected.
 
+### Phase 5 implementation
+
+`ProductPlanningService` orchestrates the five real stages `REQUIREMENT_GENERATION`, `VERSION_PLANNING`, `PRD_GENERATION`, `TEST_CASE_GENERATION`, and `TRACEABILITY_VALIDATION` in the existing single-process background model. It reuses the configured `LLMProvider`; no second provider abstraction, queue, graph engine, or agent framework is introduced.
+
+The service boundary is split as follows:
+
+```text
+product_planning.py   runtime prompt orchestration, finite retries, stage checkpoints
+product_rules.py      run scope, inheritance, priority, artifact and coverage validation
+prd_renderer.py       deterministic locale-aware Markdown rendering
+```
+
+The current conservative admission rule allows only `SUPPORTED` Findings to generate formal Requirements. Every generated layer retains a draft and validation record before its final artifact. Requirement claim-boundary validation is a separate structured runtime-model call; code then validates the revision shape, derives evidence, and calibrates priority. The model output schemas intentionally omit Requirement and TestCase Review ID fields.
+
+Evidence inheritance is exact in the Phase 5 implementation:
+
+```text
+Requirement.review_ids
+  = stable union(referenced Finding.supporting_review_ids)
+
+TestCase.source_review_ids
+  = referenced Requirement.review_ids
+```
+
+Version validation assigns every accepted/revised Requirement exactly once. `StructuredPRDDraft` supplies product language and proposed references, while deterministic code rejects disallowed references and reconstructs factual sections, provenance, counts, assumptions, and limitations from validated run data. `PRDArtifact` persists both the validated `StructuredPRD` and rendered Markdown. A provider/structured-output failure leaves `last_successful_stage`, validated Findings, and any already saved draft/audit intact and creates no substitute final artifacts.
+
 ---
 
 ## Stage 11 — Traceability Validation
@@ -1190,6 +1216,16 @@ GET  /api/analysis/{analysis_run_id}/findings
 ```
 
 The POST queues in-process validation and accepts an optional run-scoped Candidate ID subset for smoke testing; the normal UI omits it and validates all Candidates. The existing aggregate run endpoint exposes evidence progress/summary for polling. The Findings endpoint returns final Findings plus their EvidenceValidationAudit records so the UI can display original Reviews, stance, and reason without recomputing semantic meaning in React.
+
+Phase 5 adds only the compact product-plan surface:
+
+```http
+POST /api/analysis/{analysis_run_id}/product-plan
+GET  /api/analysis/{analysis_run_id}/product-plan
+GET  /api/analysis/{analysis_run_id}/product-plan/prd.md
+```
+
+The POST queues generation in the existing in-process background mechanism. The aggregate run endpoint is polled for the actual stage/progress and exposes a `ProductPlanningSummary`; the product-plan GET returns drafts, validations, final artifacts, and traceability coverage. The Markdown endpoint returns only the validated deterministic artifact and fails with `PRD_NOT_AVAILABLE` if generation did not complete.
 
 ---
 

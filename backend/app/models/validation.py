@@ -20,3 +20,16 @@ class ValidationResult(RunScopedModel):
     warnings: List[str] = Field(default_factory=list)
     revision_of: Optional[str] = None
     created_at: datetime = Field(default_factory=utc_now)
+
+
+class TraceabilityCoverage(RunScopedModel):
+    finding_evidence_coverage: Optional[float] = Field(default=None, ge=0, le=1)
+    requirement_traceability_coverage: Optional[float] = Field(default=None, ge=0, le=1)
+    test_case_traceability_coverage: Optional[float] = Field(default=None, ge=0, le=1)
+    overall_traceability_coverage: Optional[float] = Field(default=None, ge=0, le=1)
+    finding_denominator: int = Field(ge=0)
+    requirement_denominator: int = Field(ge=0)
+    test_case_denominator: int = Field(ge=0)
+    hard_failures: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+    validated_at: datetime = Field(default_factory=utc_now)

@@ -3,6 +3,10 @@ export type AnalysisOutputLanguage = 'FOLLOW_UI' | 'zh-CN' | 'en-US'
 export type EvidenceStance = 'SUPPORTS' | 'CONFLICTS' | 'NEUTRAL' | 'IRRELEVANT'
 export type FindingStatus = 'SUPPORTED' | 'WEAK' | 'CONFLICTED' | 'INSUFFICIENT' | 'UNSUPPORTED'
 export type EvidenceStrength = 'HIGH' | 'MEDIUM' | 'LOW'
+export type ArtifactValidationStatus = 'ACCEPTED' | 'REVISED' | 'REJECTED' | 'ASSUMPTION'
+export type RequirementPriority = 'P0' | 'P1' | 'P2' | 'P3'
+export type ImpactLevel = 'HIGH' | 'MEDIUM' | 'LOW'
+export type TestCaseType = 'FUNCTIONAL' | 'REGRESSION' | 'NEGATIVE' | 'EDGE_CASE'
 
 export interface AnalysisRun {
   id: string
@@ -219,6 +223,7 @@ export interface AnalysisRunView {
   statistics: CleaningStatistics | null
   semantic_analysis: SemanticAnalysisSummary | null
   evidence_validation: EvidenceValidationSummary | null
+  product_planning: ProductPlanningSummary | null
 }
 
 export interface TopicsView {
@@ -235,4 +240,180 @@ export interface FindingsView {
   analysis_run_id: string
   findings: Finding[]
   audits: EvidenceValidationAudit[]
+}
+
+export interface RequirementGenerationMetadata {
+  analysis_run_id: string
+  draft_id: string
+  validation_id: string
+  grounding_verdict: 'GROUNDED' | 'PARTIAL' | 'UNGROUNDED'
+  generated_by: string
+  model_provider: string
+  model_name: string
+  generated_at: string
+  priority_adjusted: boolean
+}
+
+export interface Requirement {
+  id: string
+  analysis_run_id: string
+  title: string
+  user_problem: string
+  description: string
+  finding_ids: string[]
+  review_ids: string[]
+  priority: RequirementPriority
+  recommended_priority: RequirementPriority
+  final_priority: RequirementPriority
+  priority_reason: string
+  impact: ImpactLevel
+  confidence: number
+  acceptance_criteria: string[]
+  target_version: string | null
+  assumption: boolean
+  validation_result: ArtifactValidationStatus
+  generated_by: string
+  generation_metadata: RequirementGenerationMetadata
+}
+
+export interface VersionPlanItem {
+  id: string
+  analysis_run_id: string
+  version: string
+  theme: string
+  goal: string
+  requirement_ids: string[]
+  rationale: string
+  dependencies: string[]
+  risk: string
+  scope_note: string
+  validation_result: ArtifactValidationStatus
+}
+
+export interface VersionPlan {
+  id: string
+  analysis_run_id: string
+  title: string
+  summary: string
+  items: VersionPlanItem[]
+  validation_result: ArtifactValidationStatus
+  generated_by: string
+  model_provider: string
+  model_name: string
+  generated_at: string
+}
+
+export interface PRDSection {
+  id: string
+  analysis_run_id: string
+  section_type: string
+  title: string
+  content: string
+  finding_ids: string[]
+  requirement_ids: string[]
+  version_item_ids: string[]
+  assumption: boolean
+  validation_result: ArtifactValidationStatus
+}
+
+export interface StructuredPRD {
+  id: string
+  analysis_run_id: string
+  title: string
+  product_goal: string
+  background: string
+  analysis_scope: string
+  user_problems: PRDSection[]
+  findings_summary: PRDSection[]
+  requirements: PRDSection[]
+  release_plan: PRDSection[]
+  acceptance_criteria: PRDSection[]
+  assumptions: string[]
+  limitations: string[]
+  evidence_summary: PRDSection
+  version_plan_id: string
+  validation_result: ArtifactValidationStatus
+}
+
+export interface PRDArtifact {
+  id: string
+  analysis_run_id: string
+  structured_prd: StructuredPRD
+  rendered_markdown: string
+  validation_result: ArtifactValidationStatus
+  generated_by: string
+  model_provider: string
+  model_name: string
+  generated_at: string
+}
+
+export interface TestCase {
+  id: string
+  analysis_run_id: string
+  requirement_id: string
+  source_review_ids: string[]
+  title: string
+  preconditions: string[]
+  steps: string[]
+  expected_result: string
+  test_type: TestCaseType
+  priority: RequirementPriority
+  validation_result: ArtifactValidationStatus
+  generated_by: string
+  model_provider: string
+  model_name: string
+  generated_at: string
+  draft_id: string
+}
+
+export interface TraceabilityCoverage {
+  analysis_run_id: string
+  finding_evidence_coverage: number | null
+  requirement_traceability_coverage: number | null
+  test_case_traceability_coverage: number | null
+  overall_traceability_coverage: number | null
+  finding_denominator: number
+  requirement_denominator: number
+  test_case_denominator: number
+  hard_failures: string[]
+  warnings: string[]
+  validated_at: string
+}
+
+export interface ProductPlanningResult {
+  analysis_run_id: string
+  requirement_drafts: unknown[]
+  requirement_validations: unknown[]
+  requirements: Requirement[]
+  version_plan_draft: unknown | null
+  version_plan_validation: unknown | null
+  version_plan: VersionPlan | null
+  structured_prd_draft: unknown | null
+  prd_validation: unknown | null
+  prd_artifact: PRDArtifact | null
+  test_case_drafts: unknown[]
+  test_case_validations: unknown[]
+  test_cases: TestCase[]
+  traceability: TraceabilityCoverage | null
+  model_provider: string
+  model_name: string
+  planning_time: string | null
+}
+
+export interface ProductPlanningSummary {
+  analysis_run_id: string
+  requirement_count: number
+  rejected_requirement_count: number
+  version_count: number
+  prd_available: boolean
+  test_case_count: number
+  model_provider: string
+  model_name: string
+  planning_time: string | null
+  overall_traceability_coverage: number | null
+}
+
+export interface ProductPlanningView {
+  analysis_run_id: string
+  product_planning: ProductPlanningResult | null
 }

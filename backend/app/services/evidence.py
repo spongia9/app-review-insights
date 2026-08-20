@@ -224,7 +224,9 @@ class EvidenceValidationService:
                 "finished_at": None,
             }
         )
-        queued = result.model_copy(update={"run": run, "evidence_validation": None})
+        queued = result.model_copy(
+            update={"run": run, "evidence_validation": None, "product_planning": None}
+        )
         self.store.save(queued)
         return queued
 
@@ -247,7 +249,9 @@ class EvidenceValidationService:
                 "finished_at": None,
             }
         )
-        result = result.model_copy(update={"run": run, "evidence_validation": None})
+        result = result.model_copy(
+            update={"run": run, "evidence_validation": None, "product_planning": None}
+        )
         self.store.save(result)
 
         try:

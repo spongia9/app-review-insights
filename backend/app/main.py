@@ -8,7 +8,12 @@ from app.api.health import router as health_router
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.llm import LLMProvider, create_llm_provider
-from app.services import EvidenceValidationService, IngestionService, SemanticAnalysisService
+from app.services import (
+    EvidenceValidationService,
+    IngestionService,
+    ProductPlanningService,
+    SemanticAnalysisService,
+)
 from app.storage import RunStore
 
 
@@ -40,6 +45,11 @@ def create_app(
         provider_factory=semantic_provider_factory,
     )
     application.state.evidence_validation_service = EvidenceValidationService(
+        settings,
+        run_store,
+        provider_factory=semantic_provider_factory,
+    )
+    application.state.product_planning_service = ProductPlanningService(
         settings,
         run_store,
         provider_factory=semantic_provider_factory,

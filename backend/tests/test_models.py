@@ -92,12 +92,27 @@ def requirement_payload() -> Dict[str, Any]:
         "finding_ids": ["F-001"],
         "review_ids": ["R-001"],
         "priority": "P1",
-        "impact": "Reduce navigation friction",
+        "recommended_priority": "P1",
+        "final_priority": "P1",
+        "priority_reason": "Evidence and impact justify P1.",
+        "impact": "MEDIUM",
         "confidence": 0.72,
         "acceptance_criteria": ["Primary actions are visible from the main screen."],
         "target_version": "2.2.0",
         "assumption": False,
         "validation_result": "ACCEPTED",
+        "generated_by": "runtime_llm",
+        "generation_metadata": {
+            "analysis_run_id": RUN_ID,
+            "draft_id": "REQD-001",
+            "validation_id": "VAL-REQ-001",
+            "grounding_verdict": "GROUNDED",
+            "generated_by": "runtime_llm",
+            "model_provider": "mock",
+            "model_name": "mock-model",
+            "generated_at": datetime(2026, 8, 14, tzinfo=timezone.utc),
+            "priority_adjusted": False,
+        },
     }
 
 
@@ -111,9 +126,14 @@ def make_test_case_payload() -> Dict[str, Any]:
         "preconditions": ["The app is freshly launched."],
         "steps": ["Open the main screen.", "Locate the primary action."],
         "expected_result": "The primary action is visible without additional navigation.",
-        "test_type": "functional",
+        "test_type": "FUNCTIONAL",
         "priority": "P1",
         "validation_result": "ACCEPTED",
+        "generated_by": "runtime_llm",
+        "model_provider": "mock",
+        "model_name": "mock-model",
+        "generated_at": datetime(2026, 8, 14, tzinfo=timezone.utc),
+        "draft_id": "TCD-001",
     }
 
 
@@ -122,9 +142,13 @@ def version_plan_item_payload() -> Dict[str, Any]:
         "id": "VPI-001",
         "analysis_run_id": RUN_ID,
         "version": "2.2.0",
-        "title": "Navigation clarity",
+        "theme": "Navigation clarity",
         "goal": "Preserve discoverability of core actions.",
         "requirement_ids": ["REQ-001"],
+        "rationale": "The Requirement has validated user impact.",
+        "dependencies": [],
+        "risk": "Navigation regressions may affect existing flows.",
+        "scope_note": "Limited to primary-action discoverability.",
         "validation_result": "ACCEPTED",
     }
 
@@ -261,8 +285,13 @@ def test_additional_domain_models_validate() -> None:
         id="VP-001",
         analysis_run_id=RUN_ID,
         title="Release plan",
+        summary="One focused release.",
         items=[version_item],
         validation_result="ACCEPTED",
+        generated_by="runtime_llm",
+        model_provider="mock",
+        model_name="mock-model",
+        generated_at=datetime(2026, 8, 14, tzinfo=timezone.utc),
     )
     prd_section = PRDSection.model_validate(prd_section_payload())
     prd = StructuredPRD(
@@ -270,7 +299,16 @@ def test_additional_domain_models_validate() -> None:
         analysis_run_id=RUN_ID,
         title="Navigation PRD",
         product_goal="Keep core actions discoverable.",
-        sections=[prd_section],
+        background="The plan uses validated review evidence.",
+        analysis_scope="Current analysis run only.",
+        user_problems=[prd_section],
+        findings_summary=[prd_section.model_copy(update={"id": "PRDS-002"})],
+        requirements=[prd_section.model_copy(update={"id": "PRDS-003"})],
+        release_plan=[prd_section.model_copy(update={"id": "PRDS-004"})],
+        acceptance_criteria=[prd_section.model_copy(update={"id": "PRDS-005"})],
+        assumptions=[],
+        limitations=[],
+        evidence_summary=prd_section.model_copy(update={"id": "PRDS-006"}),
         version_plan_id=version_plan.id,
         validation_result="ACCEPTED",
     )
@@ -283,5 +321,5 @@ def test_additional_domain_models_validate() -> None:
     )
 
     assert version_plan.items[0].analysis_run_id == RUN_ID
-    assert prd.sections[0].finding_ids == ["F-001"]
+    assert prd.user_problems[0].finding_ids == ["F-001"]
     assert validation.disposition is ArtifactValidationStatus.ACCEPTED

@@ -1013,6 +1013,54 @@ The single-process/single-worker limitation and lack of distributed automatic re
 
 ---
 
+## FR-031 — Grounded Product Planning Contract
+
+Phase 5 consumes only the current AnalysisRun's validated Findings. The interview implementation admits `SUPPORTED` Findings into formal Requirement generation and conservatively excludes `WEAK`, `CONFLICTED`, `INSUFFICIENT`, and `UNSUPPORTED` Findings. Excluded Findings remain persisted and visible; `UNSUPPORTED` content must never become a formal Requirement.
+
+### Requirement generation and validation
+
+The runtime model may propose Requirement language, referenced current-run Finding IDs, impact, priority, and testable Acceptance Criteria. It must not generate Review IDs. Processing order is mandatory:
+
+```text
+structured Requirement draft
+-> Finding/run-scope validation
+-> semantic claim-boundary decision
+-> Acceptance Criteria validation
+-> deterministic Review evidence inheritance
+-> deterministic priority calibration
+-> final disposition
+```
+
+`Requirement.review_ids` must equal the stable union of `supporting_review_ids` from all referenced Findings in the current implementation. A partial or untestable draft must be revised within the validated Finding boundary and retain its original draft and reason. An ungrounded draft is `REJECTED` and cannot enter later stages.
+
+Priority uses `P0` through `P3` and stores `recommended_priority`, `final_priority`, and `priority_reason`. Thresholds must be centralized in configuration. `WEAK` evidence may never automatically become `P0`; assumptions are capped at `P3`. A deterministic priority correction produces `REVISED`.
+
+### VersionPlan validation
+
+The runtime model may choose the number and themes of versions. Deterministic validation requires every accepted/revised Requirement to appear exactly once. Unknown, duplicate, omitted, or cross-run Requirement IDs are hard failures unless an omission is explicitly represented outside the formal plan with a validated rationale; the current implementation uses exact coverage.
+
+### Structured PRD and deterministic Markdown
+
+The model returns `StructuredPRDDraft`, never final Markdown. The application validates every Finding, Requirement, VersionPlan, and version-item reference, rejects `UNSUPPORTED` or rejected references, and reconstructs factual sections, counts, provenance, assumptions, and known limitations from validated current-run artifacts. Only then may code render `PRD.md` deterministically. The rendered Markdown and its StructuredPRD source must be persisted together.
+
+### TestCase generation and traceability
+
+The runtime model may propose TestCase behavior but must not generate Review evidence. Every final TestCase must reference an accepted/revised current-run Requirement, contain at least two observable steps and a verifiable expected result, and store the exact inherited `Requirement.review_ids` set. Unknown Requirements, independent Review IDs, cross-run evidence, or incomplete inheritance are hard failures.
+
+The stage sequence is:
+
+```text
+REQUIREMENT_GENERATION
+VERSION_PLANNING
+PRD_GENERATION
+TEST_CASE_GENERATION
+TRACEABILITY_VALIDATION
+```
+
+Each successful stage persists its draft, validation audit, final artifacts available at that point, and `last_successful_stage`. Provider timeout, invalid structured output, or provider failure must preserve validated Findings and already persisted drafts but must not synthesize missing Requirements, PRD, or TestCases.
+
+---
+
 # 5. AI Requirements
 
 ## AI-001 — Runtime Model Use

@@ -7,7 +7,8 @@
     "phase": "阶段 1 · 项目骨架",
     "phase2": "阶段 2 · 数据处理",
     "phase3": "阶段 3 · 语义分析",
-    "phase4": "阶段 4 · 证据验证"
+    "phase4": "阶段 4 · 证据验证",
+    "phase5": "阶段 5 · 产品规划"
   },
   "hero": {
     "eyebrow": "基于证据的产品洞察与迭代规划",
@@ -81,8 +82,8 @@
       "title": "新建分析",
       "description": "导入真实或自备的用户评论，执行确定性校验、规范化、清洗和去重，为后续语义分析建立可信数据基础。",
       "scopeTitle": "本阶段处理范围",
-      "scopeDescription": "当前覆盖运行时主题发现、洞察候选与证据验证；产品需求、PRD 和测试用例仍不在本阶段范围内。",
-      "footer": "运行时语义分析与证据验证"
+      "scopeDescription": "当前覆盖评论处理、运行时语义分析、证据验证，以及可追溯的产品需求、版本规划、PRD 和测试用例生成。",
+      "footer": "证据驱动的产品规划"
     },
     "form": {
       "title": "分析输入",
@@ -113,7 +114,12 @@
       "TOPIC_CONSOLIDATION": "正在合并跨批次主题",
       "EVIDENCE_VALIDATION": "正在验证评论 ID 与运行范围",
       "CONFLICT_ANALYSIS": "正在判断支持与冲突证据",
-      "FINDING_FINALIZATION": "正在生成最终洞察"
+      "FINDING_FINALIZATION": "正在生成最终洞察",
+      "REQUIREMENT_GENERATION": "正在生成并验证产品需求",
+      "VERSION_PLANNING": "正在制定版本规划",
+      "PRD_GENERATION": "正在生成结构化 PRD",
+      "TEST_CASE_GENERATION": "正在生成可追溯测试用例",
+      "TRACEABILITY_VALIDATION": "正在验证完整证据链"
     },
     "semantic": {
       "title": "AI语义分析",
@@ -192,6 +198,52 @@
       },
       "errors": {
         "start": "无法启动证据验证。"
+      }
+    },
+    "planning": {
+      "title": "产品规划工作台",
+      "description": "仅从已验证洞察生成产品需求、版本规划、结构化 PRD 与测试用例，并由确定性校验维持完整证据继承关系。",
+      "start": "生成产品规划",
+      "starting": "正在启动…",
+      "retry": "重试产品规划",
+      "completed": "产品规划已完成",
+      "noEligibleFindings": "当前没有证据充分的洞察可进入正式产品规划；系统不会从弱证据、冲突证据或缺乏支持的洞察强行生成需求。",
+      "failureSafety": "已验证洞察仍被保留，系统不会用伪造的需求、PRD 或测试用例替代失败结果。",
+      "notApplicable": "不适用",
+      "acceptanceCriteria": "验收标准",
+      "info": {
+        "requirements": "产品需求",
+        "versions": "版本数量",
+        "tests": "测试用例",
+        "traceability": "整体可追溯性",
+        "model": "生成模型"
+      },
+      "requirements": {
+        "title": "产品需求",
+        "evidenceCount": "{{count}} 条来源评论",
+        "viewFindings": "查看来源洞察（{{count}}）",
+        "viewReviews": "查看来源评论（{{count}}）"
+      },
+      "versionPlan": {
+        "title": "版本规划",
+        "rationale": "规划依据"
+      },
+      "prd": {
+        "title": "PRD",
+        "background": "背景",
+        "scope": "分析范围",
+        "download": "下载 PRD.md",
+        "viewMarkdown": "查看确定性渲染的 PRD Markdown"
+      },
+      "testCases": {
+        "title": "测试用例",
+        "requirement": "对应产品需求",
+        "expected": "预期结果",
+        "sourceCount": "{{count}} 条来源评论"
+      },
+      "errors": {
+        "start": "无法启动产品规划。",
+        "poll": "无法刷新产品规划状态。"
       }
     },
     "sources": {

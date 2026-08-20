@@ -6,6 +6,7 @@ import type {
   FindingCandidatesView,
   FindingsView,
   IngestionResult,
+  ProductPlanningView,
   TopicsView,
 } from '../types/analysis'
 
@@ -150,6 +151,21 @@ export async function startEvidenceValidation(analysisRunId: string): Promise<An
 
 export async function getFindings(analysisRunId: string): Promise<FindingsView> {
   return requestJson<FindingsView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/findings`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  })
+}
+
+export async function startProductPlanning(analysisRunId: string): Promise<AnalysisRunView> {
+  return requestJson<AnalysisRunView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/product-plan`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+}
+
+export async function getProductPlan(analysisRunId: string): Promise<ProductPlanningView> {
+  return requestJson<ProductPlanningView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/product-plan`, {
     method: 'GET',
     headers: { Accept: 'application/json' },
   })

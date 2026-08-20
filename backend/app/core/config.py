@@ -67,6 +67,14 @@ class Settings(BaseSettings):
     evidence_insufficient_confidence_cap: float = Field(default=0.45, ge=0, le=1)
     evidence_unsupported_confidence_cap: float = Field(default=0.20, ge=0, le=1)
 
+    product_finding_batch_size: int = Field(default=8, ge=1, le=25)
+    product_acceptance_criteria_min_count: int = Field(default=2, ge=1, le=10)
+    product_acceptance_criterion_min_chars: int = Field(default=8, ge=4, le=100)
+    product_p0_min_support_count: int = Field(default=20, ge=1, le=1000)
+    product_p0_min_confidence: float = Field(default=0.85, ge=0, le=1)
+    product_p1_min_support_count: int = Field(default=8, ge=1, le=1000)
+    product_p1_min_confidence: float = Field(default=0.70, ge=0, le=1)
+
     @field_validator("sqlite_database_path", mode="after")
     @classmethod
     def resolve_database_path(cls, value: Path) -> Path:

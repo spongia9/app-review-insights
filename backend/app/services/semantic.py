@@ -373,6 +373,7 @@ class SemanticAnalysisService:
                 "run": run,
                 "semantic_analysis": result.semantic_analysis if resume_consolidation else None,
                 "evidence_validation": None,
+                "product_planning": None,
             }
         )
         self.store.save(queued)
@@ -439,6 +440,7 @@ class SemanticAnalysisService:
                 "run": run,
                 "semantic_analysis": result.semantic_analysis if resume_consolidation else None,
                 "evidence_validation": None,
+                "product_planning": None,
             }
         )
         self.store.save(result)

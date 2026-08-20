@@ -8,8 +8,12 @@ from app.models.enums import (
     EvidenceStrength,
     EvidenceStance,
     FindingEvidenceStatus,
+    ImpactLevel,
     PipelineStage,
+    RequirementGroundingVerdict,
+    RequirementPriority,
     SourceType,
+    TestCaseType,
 )
 from app.models.evidence import (
     EvidenceJudgment,
@@ -33,8 +37,28 @@ from app.models.ingestion import (
     RejectedReview,
     ReviewsView,
 )
-from app.models.prd import PRDSection, StructuredPRD
-from app.models.requirement import Requirement
+from app.models.prd import (
+    PRDArtifact,
+    PRDSection,
+    PRDSectionProposal,
+    StructuredPRD,
+    StructuredPRDDraft,
+    StructuredPRDDraftOutput,
+)
+from app.models.product_planning import (
+    ProductPlanningResult,
+    ProductPlanningSummary,
+    ProductPlanningView,
+)
+from app.models.requirement import (
+    Requirement,
+    RequirementDraft,
+    RequirementDraftOutput,
+    RequirementGenerationMetadata,
+    RequirementGroundingDecision,
+    RequirementGroundingOutput,
+    RequirementProposal,
+)
 from app.models.review import Review
 from app.models.semantic import (
     AuditArtifact,
@@ -50,9 +74,15 @@ from app.models.semantic import (
     TopicDiscoveryOutput,
     TopicsView,
 )
-from app.models.test_case import TestCase
-from app.models.validation import ValidationResult
-from app.models.version_plan import VersionPlan, VersionPlanItem
+from app.models.test_case import TestCase, TestCaseDraft, TestCaseDraftOutput, TestCaseProposal
+from app.models.validation import TraceabilityCoverage, ValidationResult
+from app.models.version_plan import (
+    VersionPlan,
+    VersionPlanDraft,
+    VersionPlanDraftOutput,
+    VersionPlanItem,
+    VersionPlanItemProposal,
+)
 
 __all__ = [
     "AnalysisRun",
@@ -82,24 +112,48 @@ __all__ = [
     "FindingEvidenceStatus",
     "FindingValidationMetadata",
     "FindingsView",
+    "ImpactLevel",
     "CleaningStatistics",
     "IngestionResult",
     "PipelineStage",
     "PRDSection",
+    "PRDArtifact",
+    "PRDSectionProposal",
     "ProviderMetadata",
     "RejectedReview",
     "Requirement",
+    "RequirementDraft",
+    "RequirementDraftOutput",
+    "RequirementGenerationMetadata",
+    "RequirementGroundingDecision",
+    "RequirementGroundingOutput",
+    "RequirementGroundingVerdict",
+    "RequirementPriority",
+    "RequirementProposal",
     "Review",
     "ReviewsView",
     "SourceType",
     "SemanticAnalysisResult",
     "SemanticAnalysisSummary",
     "StructuredPRD",
+    "StructuredPRDDraft",
+    "StructuredPRDDraftOutput",
     "TestCase",
+    "TestCaseDraft",
+    "TestCaseDraftOutput",
+    "TestCaseProposal",
+    "TestCaseType",
     "TopicCandidate",
     "TopicDiscoveryOutput",
     "TopicsView",
     "ValidationResult",
+    "TraceabilityCoverage",
     "VersionPlan",
+    "VersionPlanDraft",
+    "VersionPlanDraftOutput",
     "VersionPlanItem",
+    "VersionPlanItemProposal",
+    "ProductPlanningResult",
+    "ProductPlanningSummary",
+    "ProductPlanningView",
 ]

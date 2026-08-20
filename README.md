@@ -66,7 +66,66 @@ The GitHub project should preserve a complete commit history to show the candida
 - Provide a sample environment file or equivalent configuration instructions, but do not include API keys or other secrets.
 - A non-runnable document-only submission is not acceptable.
 
-## Current Implementation Notes — Phase 4
+## Current Implementation Notes — Phase 5
+
+Phase 5 converts current-run validated Findings into a grounded product plan while preserving the executable chain `Review -> Finding -> Requirement -> TestCase`. Only `SUPPORTED` Findings enter formal Requirement generation in the interview build. `WEAK`, `INSUFFICIENT`, `UNSUPPORTED`, and—by the documented conservative rule—`CONFLICTED` Findings remain visible upstream but are excluded from formal Requirements. This prevents weak or unresolved evidence from becoming a high-priority product promise.
+
+The configured runtime LLM creates structured Requirement drafts, semantic grounding decisions, a VersionPlan draft, a StructuredPRD draft, and TestCase drafts. Deterministic application code owns all identifiers, evidence inheritance, run isolation, priority calibration, factual PRD normalization, Markdown rendering, and traceability coverage. The model never supplies Requirement or TestCase Review IDs.
+
+### Requirement validation and priority
+
+Each Requirement passes schema validation, current-run Finding reference validation, semantic claim-boundary validation, Acceptance Criteria quality checks, deterministic evidence inheritance, and deterministic priority calibration. `Requirement.review_ids` is the exact stable union of the referenced Findings' validated `supporting_review_ids`. The original `RequirementDraft`, semantic decision, validation result, and final Requirement are retained separately.
+
+Default priority rules are centralized in configuration:
+
+- assumptions are capped at `P3`;
+- non-`SUPPORTED` evidence is capped at `P2` and is not currently admitted to formal generation;
+- high impact with at least 20 supporting Reviews and confidence at least 0.85 recommends `P0`;
+- high/medium impact with at least 8 supporting Reviews and confidence at least 0.70 recommends `P1`;
+- remaining eligible Requirements recommend `P2`.
+
+If the LLM proposal differs, code stores `recommended_priority`, `final_priority`, and `priority_reason`, marks the artifact `REVISED`, and preserves the original draft.
+
+### Version Plan, Structured PRD, and Test Cases
+
+The VersionPlan assigns every accepted/revised Requirement exactly once; unknown, duplicate, cross-run, or omitted Requirement IDs fail validation. PRD generation follows `StructuredPRD draft -> reference/fact validation -> deterministic normalization -> deterministic Markdown renderer`. Factual sections, provenance, counts, assumptions, and limitations are reconstructed from validated Findings, Requirements, VersionPlan data, and run metadata—not accepted as uncontrolled model prose.
+
+Every TestCase must reference an accepted/revised current-run Requirement, contain observable steps and expected results, and inherits the exact `Requirement.review_ids` set. Final validation calculates Finding, Requirement, TestCase, and overall traceability coverage. Any broken inheritance, unknown/cross-run ID, unsupported formal Finding, or invalid final PRD reference is a hard failure; no fake downstream artifact is generated after provider or schema failure.
+
+Phase 5 prompts live in `backend/app/prompts/`: `requirement_generation.md`, `requirement_grounding.md`, `version_planning.md`, `prd_generation.md`, and `testcase_generation.md`. The run persists `RequirementDraft`, Requirement validation/revision, `VersionPlanDraft`, `StructuredPRDDraft`, PRD validation, `TestCaseDraft`, TestCase validation, and final artifacts after each completed stage.
+
+### Phase 5 API and configuration
+
+```http
+POST /api/analysis/{analysis_run_id}/product-plan
+GET  /api/analysis/{analysis_run_id}/product-plan
+GET  /api/analysis/{analysis_run_id}/product-plan/prd.md
+```
+
+The aggregate `GET /api/analysis/{analysis_run_id}` response includes the product-planning summary for polling. The final endpoint downloads the validated, deterministically rendered artifact as `PRD.md`.
+
+Optional non-secret settings are documented in `.env.example`:
+
+```text
+PRODUCT_FINDING_BATCH_SIZE=8
+PRODUCT_ACCEPTANCE_CRITERIA_MIN_COUNT=2
+PRODUCT_ACCEPTANCE_CRITERION_MIN_CHARS=8
+PRODUCT_P0_MIN_SUPPORT_COUNT=20
+PRODUCT_P0_MIN_CONFIDENCE=0.85
+PRODUCT_P1_MIN_SUPPORT_COUNT=8
+PRODUCT_P1_MIN_CONFIDENCE=0.70
+```
+
+The real smoke command uses the configured runtime provider, never prints the API key, verifies exact evidence inheritance, and writes an inspectable UTF-8 PRD artifact under ignored local data:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe scripts\real_product_planning_smoke.py <RUN_ID> --review-count 5
+```
+
+The complete Phase 5 verification record is in [`docs/PHASE5_ACCEPTANCE.md`](docs/PHASE5_ACCEPTANCE.md). Phase 6 remains responsible for the final cross-artifact Dashboard/traceability presentation; Phase 5 only adds the minimal product-planning workspace and working source links.
+
+## Phase 4 Evidence Validation Foundation
 
 Phase 4 converts preserved `FindingCandidate` objects into separate validated `Finding` objects. It first rejects unknown, duplicate, or cross-run Review references with deterministic code. The configured runtime LLM then classifies each in-scope Review against the exact candidate claim as `SUPPORTS`, `CONFLICTS`, `NEUTRAL`, or `IRRELEVANT`. Only validated `SUPPORTS` and `CONFLICTS` records enter the final Finding evidence lists; every judgment remains available in a run-scoped `EvidenceValidationAudit`.
 
