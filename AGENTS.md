@@ -652,8 +652,12 @@ PENDING
 RUNNING
 COMPLETED
 WARNING
+COMPLETED_WITH_WARNINGS
 FAILED
+VALIDATION_FAILED
 ```
+
+Standalone stage APIs may finish with `WARNING`. The unified final pipeline uses `COMPLETED_WITH_WARNINGS` only after final traceability validation passes with warnings, and `VALIDATION_FAILED` when structural traceability hard failures remain.
 
 Cached results must be visibly marked `CACHED RESULT` or `DEMO RESULT` and preserve `source`, `collection_time`, `model_provider`, `model_name`, and `analysis_time`. Never present cached artifacts as a new live run.
 
@@ -768,6 +772,8 @@ traceability
 ## Phase 6 — UI Completion
 
 Expose the complete pipeline in React.
+
+The normal user path must use one Start action to queue all post-ingestion stages. Preserve individual stage endpoints only for debug/recovery. Final traceability must be a persisted backend matrix with forward/reverse indexes, coverage, hard failures/warnings, and run audit events; it must not exist only as frontend-rendered links.
 
 ---
 

@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ApiError, createAppStoreAnalysis, createFileAnalysis } from '../api/client'
+import { ApiError, createAppStoreAnalysis, createFileAnalysis, startFullPipeline } from '../api/client'
 import type { AnalysisOutputLanguage, AnalysisSource, IngestionResult } from '../types/analysis'
 
 interface NewAnalysisFormProps {
@@ -17,7 +17,7 @@ export interface AnalysisFormError {
 const sources: AnalysisSource[] = ['app_store', 'csv', 'json']
 
 export function NewAnalysisForm({ onComplete }: NewAnalysisFormProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [source, setSource] = useState<AnalysisSource>('app_store')
   const [appStoreUrl, setAppStoreUrl] = useState('')
   const [analysisGoal, setAnalysisGoal] = useState('')
@@ -51,7 +51,12 @@ export function NewAnalysisForm({ onComplete }: NewAnalysisFormProps) {
         source === 'app_store'
           ? await createAppStoreAnalysis(appStoreUrl, analysisGoal, outputLanguage)
           : await createFileAnalysis(source, file as File, analysisGoal, outputLanguage)
-      onComplete(result)
+      const queued = await startFullPipeline(
+        result.analysis_run_id,
+        outputLanguage,
+        i18n.resolvedLanguage ?? 'zh-CN',
+      )
+      onComplete({ ...result, run: queued.run })
     } catch (caughtError) {
       if (caughtError instanceof ApiError) {
         setError({

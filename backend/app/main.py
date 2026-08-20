@@ -10,6 +10,7 @@ from app.core.logging import configure_logging
 from app.llm import LLMProvider, create_llm_provider
 from app.services import (
     EvidenceValidationService,
+    FullPipelineService,
     IngestionService,
     ProductPlanningService,
     SemanticAnalysisService,
@@ -53,6 +54,12 @@ def create_app(
         settings,
         run_store,
         provider_factory=semantic_provider_factory,
+    )
+    application.state.full_pipeline_service = FullPipelineService(
+        run_store,
+        application.state.semantic_analysis_service,
+        application.state.evidence_validation_service,
+        application.state.product_planning_service,
     )
     application.include_router(health_router, prefix=settings.api_prefix)
     application.include_router(analysis_router, prefix=settings.api_prefix)

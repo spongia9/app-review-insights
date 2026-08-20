@@ -7,6 +7,7 @@ import type {
   FindingsView,
   IngestionResult,
   ProductPlanningView,
+  TraceabilityView,
   TopicsView,
 } from '../types/analysis'
 
@@ -120,8 +121,27 @@ export async function startSemanticAnalysis(
   })
 }
 
+export async function startFullPipeline(
+  analysisRunId: string,
+  outputLanguage: AnalysisOutputLanguage,
+  uiLanguage: string,
+): Promise<AnalysisRunView> {
+  return requestJson<AnalysisRunView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/pipeline`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ output_language: outputLanguage, ui_language: uiLanguage }),
+  })
+}
+
 export async function getAnalysisRun(analysisRunId: string): Promise<AnalysisRunView> {
   return requestJson<AnalysisRunView>(`${apiBaseUrl}/api/analysis/${analysisRunId}`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  })
+}
+
+export async function getAnalysisWorkspace(analysisRunId: string): Promise<IngestionResult> {
+  return requestJson<IngestionResult>(`${apiBaseUrl}/api/analysis/${analysisRunId}/workspace`, {
     method: 'GET',
     headers: { Accept: 'application/json' },
   })
@@ -166,6 +186,13 @@ export async function startProductPlanning(analysisRunId: string): Promise<Analy
 
 export async function getProductPlan(analysisRunId: string): Promise<ProductPlanningView> {
   return requestJson<ProductPlanningView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/product-plan`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  })
+}
+
+export async function getTraceability(analysisRunId: string): Promise<TraceabilityView> {
+  return requestJson<TraceabilityView>(`${apiBaseUrl}/api/analysis/${analysisRunId}/traceability`, {
     method: 'GET',
     headers: { Accept: 'application/json' },
   })

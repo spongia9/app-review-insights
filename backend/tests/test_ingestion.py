@@ -163,7 +163,7 @@ def test_app_store_provider_maps_mock_feed_and_preserves_us_provenance() -> None
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.host == "itunes.apple.com"
-        assert request.url.path.startswith("/us/rss/customerreviews/")
+        assert request.url.path == "/us/rss/customerreviews/id=123456/sortby=mostrecent/page=1/json"
         return httpx.Response(200, json=payload, request=request)
 
     provider = AppStoreProvider(
@@ -178,6 +178,16 @@ def test_app_store_provider_maps_mock_feed_and_preserves_us_provenance() -> None
     assert result.batch.storefront_verified is True
     assert result.reviews[0].storefront == "us"
     assert result.reviews[0].source_review_id == "apple-review-1"
+
+
+def test_app_store_provider_does_not_inherit_environment_proxy_by_default() -> None:
+    provider = AppStoreProvider(
+        "https://apps.apple.com/us/app/example/id123456",
+        max_pages=1,
+        max_review_rows=50,
+        timeout_seconds=1,
+    )
+    assert provider.trust_environment_proxy is False
 
 
 def test_analysis_api_csv_run_and_retrieval(tmp_path: Path) -> None:

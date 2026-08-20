@@ -1,0 +1,25 @@
+id,rating,title,text,version,language,created_at
+MUSIC-001,1,Downloads disappear,Albums I download for flights disappear from offline mode after the app refreshes.,8.2,en-US,2026-07-01T10:00:00Z
+MUSIC-002,2,Offline playback fails,Downloaded songs still show a network error when I switch to airplane mode.,8.2,en-US,2026-07-02T10:00:00Z
+MUSIC-003,1,通勤时无法离线播放,已经下载的歌在地铁没有网络时还是无法播放，一直提示需要联网。,8.2,zh-CN,2026-07-03T10:00:00Z
+MUSIC-004,2,Offline queue resets,My downloaded queue resets whenever the app is restarted without a connection.,8.1,en-US,2026-07-04T10:00:00Z
+MUSIC-005,1,下载内容会消失,每次更新应用后，之前下载的专辑都会从离线列表消失。,8.2,zh-CN,2026-07-05T10:00:00Z
+MUSIC-006,2,Cannot verify downloads,The app says my playlist is downloaded but half the tracks cannot play offline.,8.2,en-US,2026-07-06T10:00:00Z
+MUSIC-007,2,Lyrics are late,Synced lyrics are several seconds behind the vocals on almost every live track.,8.2,en-US,2026-07-07T10:00:00Z
+MUSIC-008,1,歌词不同步,歌词经常比歌曲慢好几句，手动调整后下一首歌又恢复错误。,8.2,zh-CN,2026-07-08T10:00:00Z
+MUSIC-009,2,Wrong lyric version,The lyrics shown are for the studio recording while the live version is playing.,8.1,en-US,2026-07-09T10:00:00Z
+MUSIC-010,1,Missing lyrics,Popular songs that had lyrics last month now show lyrics unavailable.,8.2,en-US,2026-07-10T10:00:00Z
+MUSIC-011,2,歌词滚动卡住,进入副歌以后歌词滚动会卡住，必须重新打开播放页。,8.2,zh-CN,2026-07-11T10:00:00Z
+MUSIC-012,2,No manual sync,There is no way to report or correct lyrics that are visibly out of sync.,8.1,en-US,2026-07-12T10:00:00Z
+MUSIC-013,1,Collaborative playlist loses edits,Songs added by my friends vanish from our shared playlist a few minutes later.,8.2,en-US,2026-07-13T10:00:00Z
+MUSIC-014,2,共享歌单不同步,朋友添加了歌曲，但我的共享歌单一直看不到这些修改。,8.2,zh-CN,2026-07-14T10:00:00Z
+MUSIC-015,1,Duplicate collaborative edits,Each collaborative edit creates duplicate tracks when two people update together.,8.2,en-US,2026-07-15T10:00:00Z
+MUSIC-016,2,Cannot identify editor,"Shared playlists do not show who removed a track, so changes are impossible to coordinate.",8.1,en-US,2026-07-16T10:00:00Z
+MUSIC-017,1,协作修改被覆盖,两个人同时编辑歌单时，其中一方的修改会被直接覆盖。,8.2,zh-CN,2026-07-17T10:00:00Z
+MUSIC-018,2,Invites stop working,Playlist collaboration invites expire immediately even though the link is new.,8.2,en-US,2026-07-18T10:00:00Z
+MUSIC-019,2,Recommendations repeat,The discovery mix recommends the same artists every day and rarely introduces new music.,8.2,en-US,2026-07-19T10:00:00Z
+MUSIC-020,1,推荐越来越重复,每日推荐连续一周都是相同的歌手，完全没有发现新音乐的感觉。,8.2,zh-CN,2026-07-20T10:00:00Z
+MUSIC-021,2,Dislikes are ignored,I dislike tracks but the recommendation feed keeps bringing those songs back.,8.1,en-US,2026-07-21T10:00:00Z
+MUSIC-022,1,Wrong genres,Recommendations ignore the genres I follow and mostly promote unrelated pop releases.,8.2,en-US,2026-07-22T10:00:00Z
+MUSIC-023,2,不理解收听偏好,我主要听爵士乐，但推荐页一直推送完全无关的热门流行歌曲。,8.2,zh-CN,2026-07-23T10:00:00Z
+MUSIC-024,1,Discovery feels sponsored,The recommendation shelf feels like repeated promotion instead of learning from my listening history.,8.2,en-US,2026-07-24T10:00:00Z

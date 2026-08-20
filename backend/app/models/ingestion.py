@@ -9,6 +9,11 @@ from app.models.review import Review
 from app.models.semantic import SemanticAnalysisResult, SemanticAnalysisSummary
 from app.models.evidence_result import EvidenceValidationResult, EvidenceValidationSummary
 from app.models.product_planning import ProductPlanningResult, ProductPlanningSummary
+from app.models.traceability import (
+    FinalTraceabilityResult,
+    FinalTraceabilitySummary,
+    RunAuditEvent,
+)
 
 
 class RejectedReview(DomainModel):
@@ -44,6 +49,8 @@ class IngestionResult(RunScopedModel):
     semantic_analysis: Optional[SemanticAnalysisResult] = None
     evidence_validation: Optional[EvidenceValidationResult] = None
     product_planning: Optional[ProductPlanningResult] = None
+    final_traceability: Optional[FinalTraceabilityResult] = None
+    audit_events: List[RunAuditEvent] = Field(default_factory=list)
 
 
 class AnalysisRunView(RunScopedModel):
@@ -53,6 +60,8 @@ class AnalysisRunView(RunScopedModel):
     semantic_analysis: Optional[SemanticAnalysisSummary] = None
     evidence_validation: Optional[EvidenceValidationSummary] = None
     product_planning: Optional[ProductPlanningSummary] = None
+    final_traceability: Optional[FinalTraceabilitySummary] = None
+    audit_event_count: int = Field(default=0, ge=0)
 
 
 class ReviewsView(RunScopedModel):

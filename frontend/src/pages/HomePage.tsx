@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { getHealth } from '../api/client'
+import { getAnalysisWorkspace, getHealth } from '../api/client'
 import { BackendStatus } from '../components/BackendStatus'
-import { IngestionResults } from '../components/IngestionResults'
+import { AnalysisWorkspace } from '../components/AnalysisWorkspace'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
 import { NewAnalysisForm } from '../components/NewAnalysisForm'
 import type { IngestionResult } from '../types/analysis'
@@ -26,6 +26,26 @@ export function HomePage() {
     return () => controller.abort()
   }, [])
 
+  useEffect(() => {
+    const analysisRunId = new URLSearchParams(window.location.search).get('run')
+    if (!analysisRunId) {
+      return
+    }
+    getAnalysisWorkspace(analysisRunId)
+      .then(setResult)
+      .catch(() => {
+        // A missing or expired in-memory run must not prevent a new analysis.
+        window.history.replaceState({}, '', window.location.pathname)
+      })
+  }, [])
+
+  function handleAnalysisComplete(nextResult: IngestionResult) {
+    setResult(nextResult)
+    const url = new URL(window.location.href)
+    url.searchParams.set('run', nextResult.analysis_run_id)
+    window.history.replaceState({}, '', url)
+  }
+
   return (
     <div className="flex min-h-dvh flex-col bg-[#f4f8fc] text-[#132a46]">
       <header className="border-b border-[#dce7f1] bg-white">
@@ -40,7 +60,7 @@ export function HomePage() {
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <LanguageSwitcher />
             <span className="hidden font-mono text-[0.62rem] tracking-[0.08em] text-[#8a9aad] md:inline">
-              {t('header.phase5')}
+              {t('header.phase6')}
             </span>
           </div>
         </div>
@@ -57,7 +77,7 @@ export function HomePage() {
                 {t('analysis.page.description')}
               </p>
             </div>
-            <NewAnalysisForm onComplete={setResult} />
+            <NewAnalysisForm onComplete={handleAnalysisComplete} />
           </section>
 
           <aside className="min-w-0 border-t border-[#dce7f1] pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0 xl:pl-10">
@@ -78,7 +98,7 @@ export function HomePage() {
 
         {result ? (
           <section className="mt-8 border-t border-[#dce7f1] pt-8 lg:mt-10 lg:pt-10">
-            <IngestionResults result={result} />
+            <AnalysisWorkspace result={result} />
           </section>
         ) : null}
       </main>

@@ -8,7 +8,8 @@
     "phase2": "阶段 2 · 数据处理",
     "phase3": "阶段 3 · 语义分析",
     "phase4": "阶段 4 · 证据验证",
-    "phase5": "阶段 5 · 产品规划"
+    "phase5": "阶段 5 · 产品规划",
+    "phase6": "阶段 6 · 完整工作台"
   },
   "hero": {
     "eyebrow": "基于证据的产品洞察与迭代规划",
@@ -99,7 +100,7 @@
       "goalPlaceholder": "例如：重点分析订阅转化、低评分评论和最近版本的使用体验。",
       "outputLanguage": "分析结果语言",
       "outputLanguageHint": "仅控制主题和洞察候选的生成语言，不翻译或修改原始评论。",
-      "submit": "开始处理",
+      "submit": "开始分析",
       "processing": "正在处理…",
       "failedRun": "失败任务"
     },
@@ -246,6 +247,150 @@
         "poll": "无法刷新产品规划状态。"
       }
     },
+    "workspace": {
+      "title": "分析工作台",
+      "navigation": "分析工作台导航",
+      "pending": "该阶段结果将在流水线完成后显示。",
+      "pendingModel": "等待模型启动",
+      "progressCompleted": "完整分析流程已结束",
+      "pipelineFailed": "流水线未完成",
+      "openSection": "打开完整页面",
+      "errors": {
+        "poll": "无法刷新分析任务，请确认后端服务正常。"
+      },
+      "tabs": {
+        "overview": "概览",
+        "reviews": "原始评论",
+        "cleaning": "清洗结果",
+        "topics": "动态主题",
+        "findings": "洞察发现",
+        "requirements": "产品需求",
+        "versions": "版本规划",
+        "prd": "PRD",
+        "tests": "测试用例",
+        "traceability": "可追溯性",
+        "audit": "运行记录"
+      },
+      "overview": {
+        "title": "分析概览",
+        "description": "汇总当前任务的输入规模、生成结果、运行状态与最终可追溯覆盖率。",
+        "metrics": {
+          "raw": "原始评论",
+          "clean": "清洗后评论",
+          "topics": "动态主题",
+          "findings": "已验证洞察",
+          "requirements": "产品需求",
+          "versions": "版本",
+          "tests": "测试用例"
+        },
+        "goal": "分析目标",
+        "model": "运行时模型",
+        "language": "分析结果语言",
+        "source": "数据来源",
+        "status": "任务状态",
+        "coverage": "整体可追溯覆盖率",
+        "warnings": "警告",
+        "assumptions": "假设项",
+        "revisions": "已修订",
+        "rejected": "已拒绝"
+      },
+      "reviews": {
+        "title": "原始用户评论",
+        "description": "保留评论原文及来源信息；界面语言切换不会翻译或覆盖 Review.text。",
+        "columns": {
+          "id": "评论 ID",
+          "rating": "评分",
+          "text": "原始评论",
+          "version": "版本",
+          "date": "日期",
+          "source": "来源",
+          "related": "关联洞察"
+        }
+      },
+      "cleaning": {
+        "title": "清洗与规范化结果",
+        "description": "展示确定性字段规范化、去重、无效行处理和数据来源限制。",
+        "provenance": "数据来源记录",
+        "collectionTime": "采集时间",
+        "noLimitations": "当前来源未记录额外限制。",
+        "rejectedRows": "查看 {{count}} 条被拒绝记录"
+      },
+      "topics": {
+        "title": "动态主题与候选洞察",
+        "description": "主题由运行时 LLM 根据评论内容与分析目标动态产生，不使用固定应用分类替代语义分析。",
+        "candidateNote": "候选洞察保留 Phase 3 原始结果，仅用于审计；最终结论请查看“洞察发现”。"
+      },
+      "findings": {
+        "title": "证据验证后的洞察发现",
+        "description": "每个结论展示支持、冲突、充分性、置信度、不确定性及实际数据限制。",
+        "generatedRequirements": "产生的产品需求"
+      },
+      "requirements": {
+        "title": "证据驱动的产品需求",
+        "description": "需求只能继承所引用洞察的有效支持评论，模型不能独立创建 Review ID。",
+        "evidenceCount": "{{count}} 条继承证据",
+        "targetVersion": "目标版本"
+      },
+      "versions": {
+        "title": "版本规划",
+        "risk": "风险",
+        "dependencies": "依赖"
+      },
+      "prd": {
+        "title": "最终 PRD",
+        "description": "结构化 PRD 通过验证后，由代码确定性渲染为 Markdown。",
+        "structured": "查看 Structured PRD"
+      },
+      "tests": {
+        "title": "可追溯测试用例",
+        "description": "每个测试用例都能反向追溯到产品需求、洞察发现与原始评论。",
+        "steps": "测试步骤",
+        "why": "为什么存在这个测试？"
+      },
+      "traceability": {
+        "title": "端到端可追溯性",
+        "description": "由后端结构化矩阵和确定性校验支持 Review → Finding → Requirement → TestCase 的正向与反向追溯。",
+        "coverage": {
+          "overall": "整体覆盖率",
+          "finding": "洞察证据覆盖率",
+          "requirement": "需求追溯覆盖率",
+          "test": "测试追溯覆盖率"
+        },
+        "counts": {
+          "unsupported_count": "缺乏支持",
+          "assumption_count": "假设项",
+          "revised_count": "已修订",
+          "rejected_count": "已拒绝"
+        },
+        "hardFailures": "结构性验证失败",
+        "matrix": {
+          "review": "用户评论",
+          "role": "证据关系",
+          "finding": "洞察发现",
+          "requirement": "产品需求",
+          "version": "版本",
+          "test": "测试用例"
+        },
+        "roles": {
+          "SUPPORTING": "支持证据",
+          "CONFLICTING": "冲突证据"
+        }
+      },
+      "audit": {
+        "title": "运行记录与审计",
+        "description": "按时间记录阶段开始、完成、验证、修订、拒绝、警告和错误。",
+        "revisions": "模型重试与修订记录",
+        "types": {
+          "STAGE_STARTED": "阶段开始",
+          "STAGE_COMPLETED": "阶段完成",
+          "WARNING": "警告",
+          "ERROR": "错误",
+          "VALIDATION": "验证",
+          "REVISION": "修订",
+          "REJECTION": "拒绝"
+        }
+      }
+    },
     "sources": {
       "app_store": "App Store",
       "csv": "CSV",
@@ -275,7 +420,9 @@
     "status": {
       "COMPLETED": "已完成",
       "WARNING": "已完成，有警告",
+      "COMPLETED_WITH_WARNINGS": "已完成，有警告",
       "FAILED": "失败",
+      "VALIDATION_FAILED": "可追溯验证失败",
       "RUNNING": "处理中",
       "PENDING": "等待中"
     },

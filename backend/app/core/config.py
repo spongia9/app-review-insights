@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     max_review_rows: int = Field(default=10_000, ge=1)
     app_store_max_pages: int = Field(default=5, ge=1, le=10)
     app_store_request_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
+    app_store_trust_environment_proxy: bool = False
 
     llm_provider: Optional[str] = None
     llm_model: Optional[str] = None

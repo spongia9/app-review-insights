@@ -75,5 +75,46 @@ class RunStore:
                 return str(analysis_run_id)
         return None
 
+    def find_artifact_owner(
+        self,
+        artifact_type: str,
+        artifact_id: str,
+        *,
+        excluding_analysis_run_id: str,
+    ) -> Optional[str]:
+        """Find an identifier in another persisted run for cross-run diagnostics."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT id, result_json FROM analysis_runs WHERE id != ?",
+                (excluding_analysis_run_id,),
+            ).fetchall()
+        for analysis_run_id, payload in rows:
+            parsed = json.loads(payload)
+            if self._artifact_exists(parsed, artifact_type, artifact_id):
+                return str(analysis_run_id)
+        return None
+
+    @staticmethod
+    def _artifact_exists(payload: dict, artifact_type: str, artifact_id: str) -> bool:
+        if artifact_type == "Review":
+            return any(item.get("id") == artifact_id for item in payload.get("reviews", []))
+        evidence = payload.get("evidence_validation") or {}
+        if artifact_type == "Finding":
+            return any(item.get("id") == artifact_id for item in evidence.get("findings", []))
+        planning = payload.get("product_planning") or {}
+        if artifact_type == "Requirement":
+            return any(item.get("id") == artifact_id for item in planning.get("requirements", []))
+        if artifact_type == "TestCase":
+            return any(item.get("id") == artifact_id for item in planning.get("test_cases", []))
+        if artifact_type == "VersionPlan":
+            plan = planning.get("version_plan") or {}
+            return plan.get("id") == artifact_id or any(
+                item.get("id") == artifact_id for item in plan.get("items", [])
+            )
+        if artifact_type == "PRDArtifact":
+            artifact = planning.get("prd_artifact") or {}
+            return artifact.get("id") == artifact_id
+        return False
+
     def _connect(self) -> sqlite3.Connection:
         return sqlite3.connect(str(self.database_path), timeout=5)

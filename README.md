@@ -66,6 +66,36 @@ The GitHub project should preserve a complete commit history to show the candida
 - Provide a sample environment file or equivalent configuration instructions, but do not include API keys or other secrets.
 - A non-runnable document-only submission is not acceptable.
 
+## Current Implementation Notes — Phase 6
+
+Phase 6 adds the ordinary-user workflow promised by the original assignment. The frontend performs deterministic ingestion and then starts one persisted full-pipeline job from the same **Start Analysis** action. The backend sequentially reuses the existing Semantic Analysis, Evidence Validation, and Product Planning services before running a deterministic `FinalTraceabilityValidator`. Individual Phase 3–5 endpoints remain available only as focused debug/recovery surfaces.
+
+The final validator produces a run-scoped structured matrix with `review_id`, `finding_id`, `requirement_id`, `version`, `test_case_id`, evidence role, and validation dispositions. It also materializes forward `Review -> Finding -> Requirement -> TestCase` indexes and reverse `TestCase -> Requirement -> Finding -> Review` indexes. Unknown or cross-run IDs, broken evidence inheritance, rejected PRD references, and invalid TestCase evidence are hard failures; weak/conflicted/unsupported Findings, assumptions, revisions, rejections, source limitations, and partial analysis remain explicit warnings.
+
+Coverage uses the documented current-run, non-rejected denominators:
+
+```text
+Finding evidence coverage = Findings with valid semantic supporting Reviews / all Findings
+Requirement coverage = traceable non-assumption Requirements / all non-assumption Requirements
+Test Case coverage = traceable non-rejected TestCases / all non-rejected TestCases
+Overall coverage = sum of the three valid artifact counts / sum of the three denominators
+```
+
+An empty denominator is displayed as `N/A`. Final full-pipeline states add `COMPLETED_WITH_WARNINGS` and `VALIDATION_FAILED`; the legacy `WARNING` value remains valid for standalone stage completion. Progress is derived from the persisted current stage and that stage's persisted progress—never from a timer or frontend self-increment.
+
+Run audit events preserve stage starts/completions, validations, revisions, rejections, warnings, and errors. The bilingual responsive Analysis Workspace exposes Overview, raw Reviews, cleaning, Topics/Candidates, validated Findings, Requirements, VersionPlan, deterministic PRD, TestCases, final Traceability, and Run Audit without modifying source Review text or stored English enums.
+
+```http
+POST /api/analysis/{analysis_run_id}/pipeline
+GET  /api/analysis/{analysis_run_id}/workspace
+GET  /api/analysis/{analysis_run_id}/traceability
+POST /api/analysis/{analysis_run_id}/traceability/validate
+```
+
+Apple's currently working U.S. customer-review path is `id={app_id}/sortby=mostrecent/page={page}/json`. The provider does not inherit system proxy variables by default because a broken Windows proxy can fail TLS while direct access succeeds. Set `APP_STORE_TRUST_ENVIRONMENT_PROXY=true` only when a verified local proxy is required.
+
+The complete Phase 6 verification record, real run identifiers, failure checks, and responsive screenshot paths are in [`docs/PHASE6_ACCEPTANCE.md`](docs/PHASE6_ACCEPTANCE.md).
+
 ## Current Implementation Notes — Phase 5
 
 Phase 5 converts current-run validated Findings into a grounded product plan while preserving the executable chain `Review -> Finding -> Requirement -> TestCase`. Only `SUPPORTED` Findings enter formal Requirement generation in the interview build. `WEAK`, `INSUFFICIENT`, `UNSUPPORTED`, and—by the documented conservative rule—`CONFLICTED` Findings remain visible upstream but are excluded from formal Requirements. This prevents weak or unresolved evidence from becoming a high-priority product promise.
@@ -123,7 +153,7 @@ cd backend
 .\.venv\Scripts\python.exe scripts\real_product_planning_smoke.py <RUN_ID> --review-count 5
 ```
 
-The complete Phase 5 verification record is in [`docs/PHASE5_ACCEPTANCE.md`](docs/PHASE5_ACCEPTANCE.md). Phase 6 remains responsible for the final cross-artifact Dashboard/traceability presentation; Phase 5 only adds the minimal product-planning workspace and working source links.
+The complete Phase 5 verification record is in [`docs/PHASE5_ACCEPTANCE.md`](docs/PHASE5_ACCEPTANCE.md). Phase 6 now builds the final cross-artifact Dashboard and validator on these preserved Phase 5 drafts, validations, final artifacts, and source links.
 
 ## Phase 4 Evidence Validation Foundation
 
@@ -236,7 +266,7 @@ UI locale and Analysis Output Language are independent. The request supports `FO
 - `FindingCandidate` remains `UNVALIDATED_CANDIDATE`, not the final `Finding` model; Phase 4 produces separate validation and Finding records.
 - A single FastAPI worker runs background tasks in-process; process restarts can interrupt the active request, while completed batch work and completed consolidation rounds remain resumable.
 - DeepSeek API availability, account quota, regional/network access, and model behavior are external dependencies.
-- Requirement, VersionPlan, PRD, TestCase, and final traceability generation remain unimplemented.
+- The Phase 3 service itself stops at unvalidated Finding Candidates; downstream Requirements, VersionPlan, PRD, TestCases, and final traceability are implemented by the later persisted services and unified Phase 6 orchestrator.
 
 Run the real-model smoke test without exposing the key:
 
@@ -255,7 +285,7 @@ The current application implements deterministic review ingestion and cleaning f
 Live collection uses Apple's storefront-specific public customer-review RSS JSON feed:
 
 ```text
-https://itunes.apple.com/us/rss/customerreviews/page={page}/id={app_id}/sortby=mostrecent/json
+https://itunes.apple.com/us/rss/customerreviews/id={app_id}/sortby=mostrecent/page={page}/json
 ```
 
 The provider accepts only `https://apps.apple.com/us/app/.../id{numeric_id}` input, requests the `us` feed, and records `source`, `storefront`, `collection_time`, and `source_limitations`. This is not visible-page HTML scraping. The public RSS feed is not documented as a stable API, may change or become unavailable, exposes only recent feed pages, and can be affected by network/rate limits. A failure is reported explicitly; the application never fabricates reviews or silently substitutes sample data.

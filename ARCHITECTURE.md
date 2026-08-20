@@ -342,6 +342,8 @@ AppStoreProvider / CSVProvider / JSONProvider
 
 `AppStoreProvider` parses only U.S. `apps.apple.com` URLs and fetches Apple's public `itunes.apple.com/us/rss/customerreviews/.../json` feed. The storefront is encoded in the request path and persisted as `us`; provider failure never falls back to sample data. RSS page limits, schema stability, availability, and network/rate-limit constraints are recorded as source limitations.
 
+The current feed path is `id={app_id}/sortby=mostrecent/page={page}/json`. `APP_STORE_TRUST_ENVIRONMENT_PROXY=false` is the default so a broken Windows/system proxy cannot silently break Apple TLS requests; environments that require a verified proxy may opt in explicitly.
+
 The shared cleaner owns normalization, row validation, internal ID allocation, and deduplication. Providers do not embed source-specific behavior downstream. Deduplication by source identity precedes the normalized title/text/rating fingerprint. SQLite persistence intentionally stores the complete validated Phase 2 result as JSON in a minimal `analysis_runs` table; an ORM and migration framework remain deferred.
 
 ---
@@ -532,8 +534,12 @@ PENDING
 RUNNING
 COMPLETED
 WARNING
+COMPLETED_WITH_WARNINGS
 FAILED
+VALIDATION_FAILED
 ```
+
+Standalone Phase 3–5 services retain `WARNING` for backward-compatible stage completion. The unified Phase 6 orchestrator converts a structurally valid final run with warnings to `COMPLETED_WITH_WARNINGS`; final hard traceability failures use `VALIDATION_FAILED`.
 
 ## 7.6 Run-Scoped Artifacts
 
@@ -984,7 +990,30 @@ Overall traceability coverage
 = fully traceable artifacts across the three levels / all artifacts in their denominators
 ```
 
-An empty denominator is `N/A`, not 100%. Unknown/cross-run IDs, broken inheritance, support/count mismatches, overlapping support/conflict sets, unlabeled unsupported conclusions, and unvalidated PRD facts are hard failures. Weak/conflicted/insufficient evidence, explicit assumptions, partial analysis, rejected rows, provider limitations, or incomplete Requirement test coverage are warnings. A run is `COMPLETED` only with zero hard failures and 100% for every applicable required coverage metric; otherwise it is `WARNING` or `FAILED` according to whether hard failures remain.
+An empty denominator is `N/A`, not 100%. Unknown/cross-run IDs, broken inheritance, support/count mismatches, overlapping support/conflict sets, unlabeled unsupported conclusions, and unvalidated PRD facts are hard failures. Weak/conflicted/insufficient evidence, explicit assumptions, partial analysis, rejected rows, provider limitations, or incomplete Requirement test coverage are warnings. A unified run is `COMPLETED` only with zero hard failures, 100% for every applicable required coverage metric, and no warnings; valid runs with warnings use `COMPLETED_WITH_WARNINGS`, structural final-validation failures use `VALIDATION_FAILED`, and pre-validation execution failures use `FAILED`.
+
+### Phase 6 final implementation
+
+`FullPipelineService` is a thin sequential orchestrator over the existing persisted `SemanticAnalysisService`, `EvidenceValidationService`, and `ProductPlanningService`. It does not duplicate model prompts or domain logic and does not add a queue product. The frontend's one Start action performs ingestion and immediately queues this orchestrator. Existing individual-stage endpoints remain useful for debug and recovery.
+
+`FinalTraceabilityValidator` scans current-run Reviews, all validated Findings, formal Requirements, VersionPlan assignments, StructuredPRD sections, and final TestCases. A generic store lookup is used only to distinguish a missing identifier from an identifier owned by another run; it never makes a cross-run reference valid. The validator persists:
+
+```text
+FinalTraceabilityResult
+  TraceabilityCoverage
+  TraceabilityMatrixRow[]
+  ForwardTraceability[]
+  ReverseTraceability[]
+  ValidationResult[]
+  unsupported / assumption / revised / rejected counts
+
+RunAuditEvent[]
+  stage started / completed
+  warning / error
+  validation / revision / rejection
+```
+
+Matrix rows store evidence role as `SUPPORTING` or `CONFLICTING`. A Review forward index is generated for every current-run Review, including Reviews with no downstream artifact. Every non-rejected TestCase receives a reverse index that ends at its inherited Review set.
 
 ---
 
@@ -1226,6 +1255,17 @@ GET  /api/analysis/{analysis_run_id}/product-plan/prd.md
 ```
 
 The POST queues generation in the existing in-process background mechanism. The aggregate run endpoint is polled for the actual stage/progress and exposes a `ProductPlanningSummary`; the product-plan GET returns drafts, validations, final artifacts, and traceability coverage. The Markdown endpoint returns only the validated deterministic artifact and fails with `PRD_NOT_AVAILABLE` if generation did not complete.
+
+Phase 6 adds the compact orchestration and final audit surface:
+
+```http
+POST /api/analysis/{analysis_run_id}/pipeline
+GET  /api/analysis/{analysis_run_id}/workspace
+GET  /api/analysis/{analysis_run_id}/traceability
+POST /api/analysis/{analysis_run_id}/traceability/validate
+```
+
+The aggregate run endpoint includes a final traceability summary and audit-event count for polling. The workspace endpoint restores the persisted aggregate and intermediate artifacts after a browser refresh. The full matrix and audit list remain on the traceability endpoint to keep ordinary polling payloads bounded.
 
 ---
 

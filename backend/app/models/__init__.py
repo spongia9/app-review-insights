@@ -6,12 +6,14 @@ from app.models.enums import (
     AuditArtifactType,
     CandidateStatus,
     EvidenceStrength,
+    EvidenceRole,
     EvidenceStance,
     FindingEvidenceStatus,
     ImpactLevel,
     PipelineStage,
     RequirementGroundingVerdict,
     RequirementPriority,
+    RunAuditEventType,
     SourceType,
     TestCaseType,
 )
@@ -76,6 +78,15 @@ from app.models.semantic import (
 )
 from app.models.test_case import TestCase, TestCaseDraft, TestCaseDraftOutput, TestCaseProposal
 from app.models.validation import TraceabilityCoverage, ValidationResult
+from app.models.traceability import (
+    FinalTraceabilityResult,
+    FinalTraceabilitySummary,
+    ForwardTraceability,
+    ReverseTraceability,
+    RunAuditEvent,
+    TraceabilityMatrixRow,
+    TraceabilityView,
+)
 from app.models.version_plan import (
     VersionPlan,
     VersionPlanDraft,
@@ -97,6 +108,7 @@ __all__ = [
     "CandidateStatus",
     "ConsolidatedAnalysisResult",
     "EvidenceStrength",
+    "EvidenceRole",
     "EvidenceStance",
     "EvidenceJudgment",
     "EvidenceJudgmentOutput",
@@ -129,6 +141,7 @@ __all__ = [
     "RequirementGroundingOutput",
     "RequirementGroundingVerdict",
     "RequirementPriority",
+    "RunAuditEventType",
     "RequirementProposal",
     "Review",
     "ReviewsView",
@@ -156,4 +169,11 @@ __all__ = [
     "ProductPlanningResult",
     "ProductPlanningSummary",
     "ProductPlanningView",
+    "FinalTraceabilityResult",
+    "FinalTraceabilitySummary",
+    "ForwardTraceability",
+    "ReverseTraceability",
+    "RunAuditEvent",
+    "TraceabilityMatrixRow",
+    "TraceabilityView",
 ]

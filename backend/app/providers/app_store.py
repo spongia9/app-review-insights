@@ -13,7 +13,7 @@ class AppStoreProvider(ReviewProvider):
     storefront = "us"
     feed_template = (
         "https://itunes.apple.com/us/rss/customerreviews/"
-        "page={page}/id={app_id}/sortby=mostrecent/json"
+        "id={app_id}/sortby=mostrecent/page={page}/json"
     )
 
     def __init__(
@@ -23,12 +23,14 @@ class AppStoreProvider(ReviewProvider):
         max_pages: int,
         max_review_rows: int,
         timeout_seconds: float,
+        trust_environment_proxy: bool = False,
         client: Optional[httpx.Client] = None,
     ) -> None:
         self.location: AppStoreLocation = parse_us_app_store_url(app_store_url)
         self.max_pages = max_pages
         self.max_review_rows = max_review_rows
         self.timeout_seconds = timeout_seconds
+        self.trust_environment_proxy = trust_environment_proxy
         self.client = client
 
     def load(self) -> ProviderBatch:
@@ -42,6 +44,7 @@ class AppStoreProvider(ReviewProvider):
         client = self.client or httpx.Client(
             timeout=self.timeout_seconds,
             follow_redirects=True,
+            trust_env=self.trust_environment_proxy,
             headers={"Accept": "application/json", "User-Agent": "AppReviewInsights/0.2"},
         )
 

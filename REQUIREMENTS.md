@@ -1006,8 +1006,12 @@ PENDING
 RUNNING
 COMPLETED
 WARNING
+COMPLETED_WITH_WARNINGS
 FAILED
+VALIDATION_FAILED
 ```
+
+`WARNING` remains the terminal value for a standalone stage execution. The unified full pipeline uses `COMPLETED_WITH_WARNINGS` when final deterministic validation has no hard failure but warnings remain, and `VALIDATION_FAILED` when final structural traceability validation fails.
 
 The single-process/single-worker limitation and lack of distributed automatic recovery must be documented as one-week implementation limitations.
 
@@ -1058,6 +1062,26 @@ TRACEABILITY_VALIDATION
 ```
 
 Each successful stage persists its draft, validation audit, final artifacts available at that point, and `last_successful_stage`. Provider timeout, invalid structured output, or provider failure must preserve validated Findings and already persisted drafts but must not synthesize missing Requirements, PRD, or TestCases.
+
+---
+
+## FR-032 — Unified Pipeline, Final Traceability, and Run Audit
+
+The ordinary user flow must require one `Start Analysis` action after choosing App Store, CSV, or JSON input, Analysis Goal, and Analysis Output Language. Ingestion may complete synchronously, but the same action must automatically queue the remaining persisted stages in order. Separate semantic/evidence/product endpoints may remain for debug and recovery; they must not be required by the normal UI.
+
+`FinalTraceabilityValidator` must deterministically validate every current-run final relationship, VersionPlan assignment, and StructuredPRD reference. It must materialize:
+
+```text
+TraceabilityMatrix(review_id, finding_id, requirement_id, version, test_case_id)
+ForwardTraceability(Review -> Finding -> Requirement -> TestCase)
+ReverseTraceability(TestCase -> Requirement -> Finding -> Review)
+```
+
+The matrix may include supporting and conflicting evidence roles and validation dispositions. Rows and indexes are backend artifacts, not frontend-only string assembly. Unknown/cross-run IDs, count/list mismatches, support/conflict overlap, missing Requirement/Finding linkage, invalid inheritance, rejected Requirement references in the formal PRD, and invalid TestCase evidence are hard failures.
+
+The final UI must expose Overview, raw Reviews, cleaning results, Topic drafts/consolidated Topics, Finding Candidates, Evidence Validation, final Findings, Requirement drafts/final Requirements, VersionPlan, StructuredPRD/rendered Markdown, TestCase drafts/final TestCases, Final Traceability, and Run Audit. All new UI is bilingual and responsive. Source Review text remains original.
+
+Run audit events are run-scoped and include at least `STAGE_STARTED`, `STAGE_COMPLETED`, `WARNING`, `ERROR`, `VALIDATION`, `REVISION`, and `REJECTION`. Progress comes from persisted pipeline state; fixed sleeps, frontend self-increment, and a terminal 100% state with active-stage copy are prohibited.
 
 ---
 

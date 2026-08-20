@@ -10,7 +10,9 @@ class AnalysisRunStatus(StringEnum):
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
     WARNING = "WARNING"
+    COMPLETED_WITH_WARNINGS = "COMPLETED_WITH_WARNINGS"
     FAILED = "FAILED"
+    VALIDATION_FAILED = "VALIDATION_FAILED"
 
 
 class PipelineStage(StringEnum):
@@ -116,3 +118,18 @@ class TestCaseType(StringEnum):
     REGRESSION = "REGRESSION"
     NEGATIVE = "NEGATIVE"
     EDGE_CASE = "EDGE_CASE"
+
+
+class RunAuditEventType(StringEnum):
+    STAGE_STARTED = "STAGE_STARTED"
+    STAGE_COMPLETED = "STAGE_COMPLETED"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    VALIDATION = "VALIDATION"
+    REVISION = "REVISION"
+    REJECTION = "REJECTION"
+
+
+class EvidenceRole(StringEnum):
+    SUPPORTING = "SUPPORTING"
+    CONFLICTING = "CONFLICTING"

@@ -13,12 +13,15 @@ from app.models import (
     IngestionResult,
     ProductPlanningView,
     ReviewsView,
+    TraceabilityView,
     TopicsView,
 )
 from app.providers.errors import IngestionError
 from app.services import (
     EvidenceValidationError,
     EvidenceValidationService,
+    FullPipelineError,
+    FullPipelineService,
     IngestionService,
     ProductPlanningError,
     ProductPlanningService,
@@ -28,6 +31,7 @@ from app.services import (
 from app.services.evidence import evidence_summary
 from app.services.product_planning import product_planning_summary
 from app.services.semantic import semantic_summary
+from app.services.traceability import final_traceability_summary
 from app.storage import RunStore
 
 
@@ -71,6 +75,28 @@ def get_evidence_service(request: Request) -> EvidenceValidationService:
 
 def get_product_planning_service(request: Request) -> ProductPlanningService:
     return request.app.state.product_planning_service
+
+
+def get_full_pipeline_service(request: Request) -> FullPipelineService:
+    return request.app.state.full_pipeline_service
+
+
+def analysis_view(result: IngestionResult) -> AnalysisRunView:
+    return AnalysisRunView(
+        analysis_run_id=result.analysis_run_id,
+        run=result.run,
+        provider=result.provider,
+        statistics=result.statistics,
+        semantic_analysis=(semantic_summary(result.semantic_analysis) if result.semantic_analysis else None),
+        evidence_validation=(evidence_summary(result.evidence_validation) if result.evidence_validation else None),
+        product_planning=(product_planning_summary(result.product_planning) if result.product_planning else None),
+        final_traceability=(
+            final_traceability_summary(result.final_traceability)
+            if result.final_traceability
+            else None
+        ),
+        audit_event_count=len(result.audit_events),
+    )
 
 
 def raise_http_error(error: IngestionError) -> None:
@@ -137,16 +163,13 @@ def require_result(analysis_run_id: str, request: Request) -> IngestionResult:
 
 @router.get("/{analysis_run_id}", response_model=AnalysisRunView)
 def get_analysis_run(analysis_run_id: str, request: Request) -> AnalysisRunView:
-    result = require_result(analysis_run_id, request)
-    return AnalysisRunView(
-        analysis_run_id=analysis_run_id,
-        run=result.run,
-        provider=result.provider,
-        statistics=result.statistics,
-        semantic_analysis=(semantic_summary(result.semantic_analysis) if result.semantic_analysis else None),
-        evidence_validation=(evidence_summary(result.evidence_validation) if result.evidence_validation else None),
-        product_planning=(product_planning_summary(result.product_planning) if result.product_planning else None),
-    )
+    return analysis_view(require_result(analysis_run_id, request))
+
+
+@router.get("/{analysis_run_id}/workspace", response_model=IngestionResult)
+def get_analysis_workspace(analysis_run_id: str, request: Request) -> IngestionResult:
+    """Return the persisted run and its intermediate artifacts for workspace restore."""
+    return require_result(analysis_run_id, request)
 
 
 def _run_semantic_analysis(
@@ -197,15 +220,7 @@ def start_semantic_analysis(
         daemon=True,
         name=f"semantic-{analysis_run_id}",
     ).start()
-    return AnalysisRunView(
-        analysis_run_id=analysis_run_id,
-        run=queued.run,
-        provider=queued.provider,
-        statistics=queued.statistics,
-        semantic_analysis=(semantic_summary(queued.semantic_analysis) if queued.semantic_analysis else None),
-        evidence_validation=(evidence_summary(queued.evidence_validation) if queued.evidence_validation else None),
-        product_planning=(product_planning_summary(queued.product_planning) if queued.product_planning else None),
-    )
+    return analysis_view(queued)
 
 
 def _run_evidence_validation(
@@ -242,15 +257,7 @@ def start_evidence_validation(
         daemon=True,
         name=f"evidence-{analysis_run_id}",
     ).start()
-    return AnalysisRunView(
-        analysis_run_id=analysis_run_id,
-        run=queued.run,
-        provider=queued.provider,
-        statistics=queued.statistics,
-        semantic_analysis=(semantic_summary(queued.semantic_analysis) if queued.semantic_analysis else None),
-        evidence_validation=(evidence_summary(queued.evidence_validation) if queued.evidence_validation else None),
-        product_planning=(product_planning_summary(queued.product_planning) if queued.product_planning else None),
-    )
+    return analysis_view(queued)
 
 
 @router.get("/{analysis_run_id}/reviews", response_model=ReviewsView)
@@ -320,14 +327,76 @@ def start_product_planning(
         daemon=True,
         name=f"product-plan-{analysis_run_id}",
     ).start()
-    return AnalysisRunView(
+    return analysis_view(queued)
+
+
+def _run_full_pipeline(
+    service: FullPipelineService,
+    analysis_run_id: str,
+    output_language: AnalysisOutputLanguage,
+    ui_language: Optional[str],
+) -> None:
+    try:
+        service.execute(
+            analysis_run_id,
+            output_language=output_language,
+            ui_language=ui_language,
+        )
+    except FullPipelineError:
+        # The orchestrator and stage services persist the truthful failure boundary.
+        return
+
+
+@router.post("/{analysis_run_id}/pipeline", response_model=AnalysisRunView, status_code=202)
+def start_full_pipeline(
+    analysis_run_id: str,
+    payload: SemanticAnalysisRequest,
+    request: Request,
+) -> AnalysisRunView:
+    try:
+        current = require_result(analysis_run_id, request)
+        selected = payload.output_language or current.run.output_language
+        queued = get_full_pipeline_service(request).queue(
+            analysis_run_id,
+            output_language=selected,
+            ui_language=payload.ui_language,
+        )
+    except FullPipelineError as error:
+        raise HTTPException(
+            status_code=error.status_code,
+            detail={"code": error.code, "message": error.message},
+        ) from error
+    Thread(
+        target=_run_full_pipeline,
+        args=(
+            get_full_pipeline_service(request),
+            analysis_run_id,
+            queued.run.output_language,
+            payload.ui_language,
+        ),
+        daemon=True,
+        name=f"full-pipeline-{analysis_run_id}",
+    ).start()
+    return analysis_view(queued)
+
+
+@router.get("/{analysis_run_id}/traceability", response_model=TraceabilityView)
+def get_traceability(analysis_run_id: str, request: Request) -> TraceabilityView:
+    result = require_result(analysis_run_id, request)
+    return TraceabilityView(
         analysis_run_id=analysis_run_id,
-        run=queued.run,
-        provider=queued.provider,
-        statistics=queued.statistics,
-        semantic_analysis=(semantic_summary(queued.semantic_analysis) if queued.semantic_analysis else None),
-        evidence_validation=(evidence_summary(queued.evidence_validation) if queued.evidence_validation else None),
-        product_planning=(product_planning_summary(queued.product_planning) if queued.product_planning else None),
+        traceability=result.final_traceability,
+        audit_events=result.audit_events,
+    )
+
+
+@router.post("/{analysis_run_id}/traceability/validate", response_model=TraceabilityView)
+def validate_traceability(analysis_run_id: str, request: Request) -> TraceabilityView:
+    result = get_full_pipeline_service(request).validate_existing(analysis_run_id)
+    return TraceabilityView(
+        analysis_run_id=analysis_run_id,
+        traceability=result.final_traceability,
+        audit_events=result.audit_events,
     )
 
 

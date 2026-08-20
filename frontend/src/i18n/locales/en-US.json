@@ -8,7 +8,8 @@
     "phase2": "Phase 2 · Data",
     "phase3": "Phase 3 · Semantic analysis",
     "phase4": "Phase 4 · Evidence validation",
-    "phase5": "Phase 5 · Product planning"
+    "phase5": "Phase 5 · Product planning",
+    "phase6": "Phase 6 · Complete workspace"
   },
   "hero": {
     "eyebrow": "Evidence-grounded product planning",
@@ -99,7 +100,7 @@
       "goalPlaceholder": "For example: Focus on subscription conversion, low ratings, and recent-version usability.",
       "outputLanguage": "Analysis Output Language",
       "outputLanguageHint": "Controls generated Topics and Finding Candidates only. Source reviews are never translated.",
-      "submit": "Start Processing",
+      "submit": "Start Analysis",
       "processing": "Processing…",
       "failedRun": "Failed run"
     },
@@ -246,6 +247,150 @@
         "poll": "Product planning status could not be refreshed."
       }
     },
+    "workspace": {
+      "title": "Analysis Workspace",
+      "navigation": "Analysis workspace navigation",
+      "pending": "This stage will appear after the pipeline produces its result.",
+      "pendingModel": "Waiting for model",
+      "progressCompleted": "The complete analysis pipeline has finished",
+      "pipelineFailed": "The pipeline did not complete",
+      "openSection": "Open full section",
+      "errors": {
+        "poll": "The analysis run could not be refreshed. Confirm that the backend is available."
+      },
+      "tabs": {
+        "overview": "Overview",
+        "reviews": "Raw Reviews",
+        "cleaning": "Cleaning",
+        "topics": "Dynamic Topics",
+        "findings": "Findings",
+        "requirements": "Requirements",
+        "versions": "Version Plan",
+        "prd": "PRD",
+        "tests": "Test Cases",
+        "traceability": "Traceability",
+        "audit": "Run Audit"
+      },
+      "overview": {
+        "title": "Analysis Overview",
+        "description": "Summarizes the current run's input, generated artifacts, execution status, and final traceability coverage.",
+        "metrics": {
+          "raw": "Raw Reviews",
+          "clean": "Clean Reviews",
+          "topics": "Topics",
+          "findings": "Validated Findings",
+          "requirements": "Requirements",
+          "versions": "Versions",
+          "tests": "Test Cases"
+        },
+        "goal": "Analysis Goal",
+        "model": "Runtime model",
+        "language": "Output language",
+        "source": "Data source",
+        "status": "Run status",
+        "coverage": "Overall traceability coverage",
+        "warnings": "Warnings",
+        "assumptions": "Assumptions",
+        "revisions": "Revised",
+        "rejected": "Rejected"
+      },
+      "reviews": {
+        "title": "Raw User Reviews",
+        "description": "Preserves original review text and provenance. Changing the UI locale never translates or overwrites Review.text.",
+        "columns": {
+          "id": "Review ID",
+          "rating": "Rating",
+          "text": "Original Review",
+          "version": "Version",
+          "date": "Date",
+          "source": "Source",
+          "related": "Related Findings"
+        }
+      },
+      "cleaning": {
+        "title": "Cleaning and Normalization",
+        "description": "Shows deterministic field normalization, deduplication, invalid-row handling, and source limitations.",
+        "provenance": "Data provenance",
+        "collectionTime": "Collection time",
+        "noLimitations": "No additional source limitation was recorded.",
+        "rejectedRows": "View {{count}} rejected rows"
+      },
+      "topics": {
+        "title": "Dynamic Topics and Finding Candidates",
+        "description": "The runtime LLM derives Topics from Review content and the Analysis Goal; a fixed app taxonomy does not replace semantic discovery.",
+        "candidateNote": "Phase 3 candidates are preserved for audit. See Findings for the validated conclusions."
+      },
+      "findings": {
+        "title": "Evidence-Validated Findings",
+        "description": "Each conclusion exposes support, conflict, sufficiency, confidence, uncertainty, and actual data limitations.",
+        "generatedRequirements": "Generated Requirements"
+      },
+      "requirements": {
+        "title": "Evidence-Grounded Requirements",
+        "description": "Requirements inherit valid supporting Reviews from their Findings; the model cannot create independent Review IDs.",
+        "evidenceCount": "{{count}} inherited evidence links",
+        "targetVersion": "Target version"
+      },
+      "versions": {
+        "title": "Version Plan",
+        "risk": "Risk",
+        "dependencies": "Dependencies"
+      },
+      "prd": {
+        "title": "Final PRD",
+        "description": "The Structured PRD is validated before code renders the deterministic Markdown artifact.",
+        "structured": "View Structured PRD"
+      },
+      "tests": {
+        "title": "Traceable Test Cases",
+        "description": "Every Test Case can be traced back through its Requirement and Finding to original Reviews.",
+        "steps": "Test steps",
+        "why": "Why does this test exist?"
+      },
+      "traceability": {
+        "title": "End-to-End Traceability",
+        "description": "A backend matrix and deterministic validation support forward and reverse Review → Finding → Requirement → TestCase tracing.",
+        "coverage": {
+          "overall": "Overall coverage",
+          "finding": "Finding evidence coverage",
+          "requirement": "Requirement coverage",
+          "test": "Test Case coverage"
+        },
+        "counts": {
+          "unsupported_count": "Unsupported",
+          "assumption_count": "Assumptions",
+          "revised_count": "Revised",
+          "rejected_count": "Rejected"
+        },
+        "hardFailures": "Structural validation failures",
+        "matrix": {
+          "review": "Review",
+          "role": "Evidence role",
+          "finding": "Finding",
+          "requirement": "Requirement",
+          "version": "Version",
+          "test": "Test Case"
+        },
+        "roles": {
+          "SUPPORTING": "Supporting",
+          "CONFLICTING": "Conflicting"
+        }
+      },
+      "audit": {
+        "title": "Run Audit",
+        "description": "Chronological stage starts, completions, validations, revisions, rejections, warnings, and errors.",
+        "revisions": "Model retry and revision records",
+        "types": {
+          "STAGE_STARTED": "Stage started",
+          "STAGE_COMPLETED": "Stage completed",
+          "WARNING": "Warning",
+          "ERROR": "Error",
+          "VALIDATION": "Validation",
+          "REVISION": "Revision",
+          "REJECTION": "Rejection"
+        }
+      }
+    },
     "sources": {
       "app_store": "App Store",
       "csv": "CSV",
@@ -275,7 +420,9 @@
     "status": {
       "COMPLETED": "Completed",
       "WARNING": "Completed with warnings",
+      "COMPLETED_WITH_WARNINGS": "Completed with warnings",
       "FAILED": "Failed",
+      "VALIDATION_FAILED": "Traceability validation failed",
       "RUNNING": "Running",
       "PENDING": "Pending"
     },

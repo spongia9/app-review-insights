@@ -7,6 +7,15 @@ export type ArtifactValidationStatus = 'ACCEPTED' | 'REVISED' | 'REJECTED' | 'AS
 export type RequirementPriority = 'P0' | 'P1' | 'P2' | 'P3'
 export type ImpactLevel = 'HIGH' | 'MEDIUM' | 'LOW'
 export type TestCaseType = 'FUNCTIONAL' | 'REGRESSION' | 'NEGATIVE' | 'EDGE_CASE'
+export type EvidenceRole = 'SUPPORTING' | 'CONFLICTING'
+export type RunAuditEventType =
+  | 'STAGE_STARTED'
+  | 'STAGE_COMPLETED'
+  | 'WARNING'
+  | 'ERROR'
+  | 'VALIDATION'
+  | 'REVISION'
+  | 'REJECTION'
 
 export interface AnalysisRun {
   id: string
@@ -15,7 +24,14 @@ export interface AnalysisRun {
   analysis_goal: string | null
   output_language: AnalysisOutputLanguage
   resolved_output_language: Exclude<AnalysisOutputLanguage, 'FOLLOW_UI'>
-  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'WARNING' | 'FAILED'
+  status:
+    | 'PENDING'
+    | 'RUNNING'
+    | 'COMPLETED'
+    | 'WARNING'
+    | 'COMPLETED_WITH_WARNINGS'
+    | 'FAILED'
+    | 'VALIDATION_FAILED'
   current_stage: string
   last_successful_stage: string | null
   progress: number
@@ -84,6 +100,9 @@ export interface IngestionResult {
   rejected_rows: RejectedReview[]
   semantic_analysis?: unknown
   evidence_validation?: unknown
+  product_planning?: unknown
+  final_traceability?: unknown
+  audit_events?: RunAuditEvent[]
 }
 
 export interface TopicCandidate {
@@ -224,6 +243,8 @@ export interface AnalysisRunView {
   semantic_analysis: SemanticAnalysisSummary | null
   evidence_validation: EvidenceValidationSummary | null
   product_planning: ProductPlanningSummary | null
+  final_traceability: FinalTraceabilitySummary | null
+  audit_event_count: number
 }
 
 export interface TopicsView {
@@ -416,4 +437,81 @@ export interface ProductPlanningSummary {
 export interface ProductPlanningView {
   analysis_run_id: string
   product_planning: ProductPlanningResult | null
+}
+
+export interface RunAuditEvent {
+  id: string
+  analysis_run_id: string
+  event_type: RunAuditEventType
+  stage: string
+  message: string
+  artifact_type: string | null
+  artifact_id: string | null
+  details: Record<string, unknown>
+  created_at: string
+}
+
+export interface TraceabilityMatrixRow {
+  analysis_run_id: string
+  review_id: string | null
+  finding_id: string | null
+  requirement_id: string | null
+  version: string | null
+  test_case_id: string | null
+  evidence_role: EvidenceRole | null
+  finding_status: FindingStatus | null
+  requirement_validation: ArtifactValidationStatus | null
+  test_validation: ArtifactValidationStatus | null
+}
+
+export interface ForwardTraceability {
+  analysis_run_id: string
+  review_id: string
+  finding_ids: string[]
+  requirement_ids: string[]
+  test_case_ids: string[]
+}
+
+export interface ReverseTraceability {
+  analysis_run_id: string
+  test_case_id: string
+  requirement_id: string
+  finding_ids: string[]
+  review_ids: string[]
+}
+
+export interface FinalTraceabilityResult {
+  id: string
+  analysis_run_id: string
+  matrix: TraceabilityMatrixRow[]
+  forward: ForwardTraceability[]
+  reverse: ReverseTraceability[]
+  coverage: TraceabilityCoverage
+  validation_results: unknown[]
+  unsupported_count: number
+  assumption_count: number
+  revised_count: number
+  rejected_count: number
+  weak_count: number
+  conflicted_count: number
+  validated_at: string
+}
+
+export interface FinalTraceabilitySummary {
+  analysis_run_id: string
+  matrix_row_count: number
+  overall_traceability_coverage: number | null
+  hard_failure_count: number
+  warning_count: number
+  unsupported_count: number
+  assumption_count: number
+  revised_count: number
+  rejected_count: number
+  validated_at: string
+}
+
+export interface TraceabilityView {
+  analysis_run_id: string
+  traceability: FinalTraceabilityResult | null
+  audit_events: RunAuditEvent[]
 }

@@ -34,6 +34,7 @@ class IngestionService:
             max_pages=self.settings.app_store_max_pages,
             max_review_rows=self.settings.max_review_rows,
             timeout_seconds=self.settings.app_store_request_timeout_seconds,
+            trust_environment_proxy=self.settings.app_store_trust_environment_proxy,
         )
         return self._run(provider, SourceType.APP_STORE, analysis_goal, output_language)
 

@@ -169,7 +169,7 @@ Done Criteria:
 - Final PRD contains only validated facts, explicit assumptions, and known limitations.
 - All hard-failure cases are detected; empty coverage denominators report `N/A`.
 - Finding evidence coverage, Requirement traceability coverage, TestCase traceability coverage, and Overall traceability coverage are all calculated from current-run non-rejected artifacts.
-- `COMPLETED` requires zero hard failures and 100% applicable required coverage; warning cases produce `WARNING`.
+- `COMPLETED` requires zero hard failures and 100% applicable required coverage; the unified pipeline uses `COMPLETED_WITH_WARNINGS` for a valid final chain with warnings and `VALIDATION_FAILED` for structural hard failures.
 - Relevant backend tests pass.
 
 ### Phase 6 — UI Completion
@@ -177,6 +177,8 @@ Done Criteria:
 Scope:
 
 - New Analysis for App Store/CSV/JSON plus analysis goal.
+- One Start action queues the complete persisted post-ingestion pipeline.
+- Final deterministic validator, structured matrix, forward/reverse indexes, coverage, and run audit.
 - Polling progress and intermediate stage results.
 - Reviews, Topics, Findings/Evidence, Requirements, VersionPlan, PRD, TestCases, and Traceability views.
 - Warnings, errors, revisions, limitations, partial-analysis counts, and cached/demo labels.
@@ -184,7 +186,10 @@ Scope:
 Done Criteria:
 
 - All three source types can start a run through the UI.
+- The normal user does not manually trigger Semantic, Evidence, and Product Planning stages.
 - Users can navigate Finding -> Review and TestCase -> Requirement -> Finding -> Review.
+- Unknown/cross-run IDs, broken inheritance, and rejected formal references produce final hard failures.
+- Coverage formulas use explicit current-run denominators and empty denominators display `N/A`.
 - Major intermediate audit artifacts and validation outcomes are inspectable where useful.
 - Cached/demo content is unmistakably labeled and provenance is visible.
 - Partial/sampled analysis never appears to cover all Reviews.
@@ -224,7 +229,9 @@ PENDING
 RUNNING
 COMPLETED
 WARNING
+COMPLETED_WITH_WARNINGS
 FAILED
+VALIDATION_FAILED
 ```
 
 ## 6. Required Phase Report
