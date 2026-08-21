@@ -1,5 +1,196 @@
 # LaienTech iOS App Review Analysis and Version Planning Assessment
 
+## Final Submission Guide
+
+App Review Insights is a locally runnable React + FastAPI workspace that turns App Store, CSV, or JSON reviews into evidence-grounded product planning artifacts. The normal user path is one **Start Analysis** action; the backend then persists each stage of the complete run.
+
+### Core workflow
+
+```mermaid
+flowchart TD
+    A[App Store URL / CSV / JSON] --> B[Scope and acquisition]
+    B --> C[Deterministic cleaning and deduplication]
+    C --> D[Runtime LLM topic discovery]
+    D --> E[Finding candidate consolidation]
+    E --> F[Semantic evidence validation]
+    F --> G[Grounded requirements]
+    G --> H[Version plan]
+    H --> I[Structured PRD + deterministic Markdown]
+    I --> J[Traceable test cases]
+    J --> K[Final traceability validation]
+```
+
+The central chain is always preserved:
+
+```text
+Review -> Validated Finding -> Requirement -> TestCase
+```
+
+### Delivered capabilities
+
+- U.S. App Store customer-review acquisition with explicit storefront provenance and limitations.
+- Documented CSV and JSON contracts, upload byte/row limits, invalid-row reporting, normalization, cleaning, and deterministic deduplication.
+- Runtime DeepSeek semantic analysis with bounded batches, dynamic topics, cross-batch consolidation, goal-aware prompts, multilingual output, and structured Pydantic validation.
+- Evidence grounding with semantic `SUPPORTS`, `CONFLICTS`, `NEUTRAL`, and `IRRELEVANT` judgments; deterministic sufficiency, confidence, evidence strength, uncertainty, and limitations.
+- Grounded Requirements, VersionPlan, Structured PRD, deterministic Markdown renderer, and Requirement-linked TestCases.
+- Persisted run-scoped traceability matrix, forward/reverse indexes, coverage metrics, audit events, warnings, revisions, rejections, and failure states.
+- Bilingual UI (`zh-CN` default, `en-US` switch) with independent Analysis Output Language.
+- Packaged Workout cached demo that works without a model key and is visibly marked as a cached result.
+
+### AI versus deterministic logic
+
+| Responsibility | Implementation |
+| --- | --- |
+| Language understanding | Runtime DeepSeek provider: topics, Finding candidates, evidence stances, Requirement language, release themes, PRD draft language, and TestCase behavior. |
+| Facts and safety | Python code: source parsing, normalization, deduplication, identifiers, run scope, allowlists, evidence counts, confidence calibration, artifact dispositions, inheritance, coverage, and final validation. |
+| Hybrid stages | Evidence validation and product planning combine structured model proposals with deterministic validators and revision/rejection rules. |
+
+Codex was used to develop this repository; that is separate from the application's runtime LLM requirement. The runtime provider is selected by environment configuration and is called only for a new live analysis.
+
+### Evidence and traceability
+
+Model output is never treated as a database. Every generated Review ID is checked against the current `analysis_run_id` and, during batch stages, the current batch allowlist. Requirements inherit Review evidence from validated Findings, and TestCases inherit it from Requirements. Unsupported or rejected artifacts remain in audit records but cannot silently enter the final PRD.
+
+Coverage is calculated over current-run, non-rejected artifacts. Empty denominators are `N/A` rather than a misleading 100%:
+
+```text
+Finding evidence coverage = valid Findings / all Findings
+Requirement coverage = traceable non-assumption Requirements / all non-assumption Requirements
+TestCase coverage = traceable non-rejected TestCases / all non-rejected TestCases
+Overall coverage = valid artifact counts across the three denominators / their total denominator
+```
+
+### Data sources and limitations
+
+The live provider accepts only a U.S. App Store URL such as:
+
+```text
+https://apps.apple.com/us/app/workout-for-women-home-gym/id839285684
+```
+
+It requests Apple's public U.S. customer-review RSS JSON feed. The feed is undocumented, mutable, rate-limited, and limited to a recent page window; the UI records these limitations and never substitutes sample data after a collection failure. A storefront supplied inside CSV/JSON is provenance metadata, not proof of live U.S. collection.
+
+### CSV and JSON contract
+
+Canonical fields are `id`, `text`, `title`, `rating`, `version`, `author`, `date`, `language`, `app_id`, and `storefront`. Only `text` is required. Supported aliases are documented in [REQUIREMENTS.md](REQUIREMENTS.md): for example `review_id`, `review_text`, `score`, `app_version`, `reviewer`, `created_at`, `lang`, and `country_code`. CSV must be UTF-8/UTF-8 BOM with a header. JSON must be an array or exactly `{ "reviews": [...] }`. Invalid rows are reported; malformed files, zero valid rows, files over 10 MiB, or more than 10,000 parsed records fail explicitly without silent truncation. All accepted data becomes the same run-scoped `Review` model.
+
+### Runtime model and prompts
+
+The interview build implements one provider: DeepSeek through its OpenAI-compatible JSON endpoint. Configure `LLM_PROVIDER=deepseek`, `LLM_MODEL`, `LLM_BASE_URL`, and `LLM_API_KEY`. Core prompt files are under `backend/app/prompts/`:
+
+```text
+topic_discovery.md
+finding_candidate.md
+topic_consolidation.md
+evidence_validation.md
+requirement_generation.md
+requirement_grounding.md
+version_planning.md
+prd_generation.md
+testcase_generation.md
+```
+
+Structured responses are validated with Pydantic, finite retries are used for retryable provider/structured-output failures, and no secret, raw model response, or full Review text is stored in diagnostics.
+
+### Installation
+
+Prerequisites: Python 3.9+ and Node.js 20+ (the verified environment used Python 3.9.7 and Node 24.12.0).
+
+From a fresh checkout on Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+
+cd backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+In a second terminal:
+
+```powershell
+cd frontend
+npm.cmd ci
+npm.cmd run dev -- --host 127.0.0.1
+```
+
+Open <http://127.0.0.1:5173>. The backend health check is <http://127.0.0.1:8000/api/health>.
+
+### Environment variables
+
+The tracked [.env.example](.env.example) contains safe values only. Copy it to the untracked project-root `.env`.
+
+| Variable | Required now? | Purpose |
+| --- | --- | --- |
+| `VITE_API_BASE_URL` | No | Frontend URL for the FastAPI API; default `http://localhost:8000`. |
+| `BACKEND_HOST`, `BACKEND_PORT`, `CORS_ORIGINS` | No | Local backend and frontend connectivity. |
+| `SQLITE_DATABASE_PATH` | No | Local SQLite path; default is under `backend/data/`. |
+| `LLM_PROVIDER` | For live analysis | Set to `deepseek`. |
+| `LLM_MODEL` | For live analysis | DeepSeek model name, for example `deepseek-v4-flash`. |
+| `LLM_BASE_URL` | No | Defaults to `https://api.deepseek.com`. |
+| `LLM_API_KEY` | For live analysis | A DeepSeek API key from the DeepSeek platform. Never commit it. |
+| `LLM_*` batching/retry settings | No | Prompt batch size, timeout, output, retry, temperature, and proxy behavior. |
+| `EVIDENCE_*`, `PRODUCT_*` | No | Centralized deterministic validation thresholds. |
+
+Without `LLM_API_KEY`, backend health, deterministic imports, and the cached demo remain available. A new live analysis stops with a clear `LLM_NOT_CONFIGURED` error and creates no fake Topics, Findings, Requirements, PRD, or TestCases.
+
+### Offline cached demo
+
+Click **查看示例分析 / View Demo Analysis** on the home page. The packaged `cached_results/workout_demo.json` contains the complete pipeline result, including cleaned Reviews, Topics, Findings, Requirements, VersionPlan, PRD, TestCases, and final traceability. Its `cached_demo` metadata stores `CACHED_DEMO=true`, source, original collection time, model provider/model, and original analysis time. The UI labels it **Cached Demo Result / 示例缓存结果**; it is never presented as a new live run. See [cached_results/README.md](cached_results/README.md).
+
+### Sample data
+
+`sample_data/` contains compatible Workout input, unknown-domain Music CSV, mixed-language JSON, dirty/duplicate input, conflicting evidence, insufficient evidence, and larger semantic fixtures. These are synthetic development inputs, not App Store or cached results. See [sample_data/README.md](sample_data/README.md).
+
+### Testing and verification
+
+From `backend/`:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+From `frontend/`:
+
+```powershell
+npm.cmd run build
+npm.cmd test
+```
+
+`npm.cmd test` starts an isolated local FastAPI/Vite pair and runs the no-key cached-demo, bilingual persistence, error-state, and responsive Chromium checks. Screenshots are written to ignored `output/playwright/phase7/`. The final verified suite is documented in [docs/FINAL_ACCEPTANCE.md](docs/FINAL_ACCEPTANCE.md), and the checklist is in [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md).
+
+### Project structure
+
+```text
+backend/app/       FastAPI API, Pydantic models, providers, services, validators
+backend/tests/     deterministic ingestion, semantic, evidence, planning, traceability tests
+frontend/src/      React workspace, i18n resources, API client, responsive panels
+frontend/e2e/      reproducible no-key cached-demo browser acceptance
+backend/app/prompts/  versioned runtime prompt resources
+sample_data/       synthetic compatible fixtures
+cached_results/    clearly labeled complete offline demo artifact
+docs/              phase acceptance and submission reports
+```
+
+### Known limitations
+
+- Apple’s public U.S. review feed is not a stable documented API and exposes a bounded recent window.
+- DeepSeek availability, quota, model behavior, and network access are external dependencies for live analysis.
+- The application uses one FastAPI process, one in-process worker path, SQLite, and frontend polling. Restarting the process interrupts an active provider request, while persisted completed stages remain inspectable.
+- Runtime semantic and evidence judgments are probabilistic; schema, ID, evidence, and traceability validators prevent unsupported identifiers and claims from silently becoming final artifacts, but cannot make language understanding infallible.
+- Complex charting, advanced exports, manual Requirement editing, multiple providers, authentication, distributed queues, RAG, vector databases, LangGraph, and multi-agent orchestration remain intentionally out of scope.
+
+### Development process
+
+The incremental Git history follows the interview phases from specification baseline through ingestion, runtime semantic analysis, evidence validation, product planning, final traceability, and stabilization. Phase acceptance reports preserve the actual run IDs, hard gates, limitations, and human spot checks:
+
+- [Phase 3 acceptance](docs/PHASE3_ACCEPTANCE.md)
+- [Phase 4 acceptance](docs/PHASE4_ACCEPTANCE.md)
+- [Phase 5 acceptance](docs/PHASE5_ACCEPTANCE.md)
+- [Phase 6 acceptance](docs/PHASE6_ACCEPTANCE.md)
+
+
 ## Background
 
 This assessment uses the following real iOS app as the primary development and demonstration example:

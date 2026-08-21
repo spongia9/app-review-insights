@@ -18,6 +18,13 @@ def create_llm_provider(settings: Settings) -> LLMProvider:
             retryable=False,
         )
     api_key = settings.llm_api_key.get_secret_value() if settings.llm_api_key else ""
+    if not api_key.strip():
+        raise LLMProviderError(
+            "LLM_NOT_CONFIGURED",
+            "LLM_API_KEY is required for live runtime semantic analysis. "
+            "Configure it in the untracked project-root .env file, or use the cached demo.",
+            retryable=False,
+        )
     return DeepSeekProvider(
         api_key=api_key,
         model_name=settings.llm_model,

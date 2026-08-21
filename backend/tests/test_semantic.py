@@ -490,6 +490,74 @@ def test_deterministic_lineage_repair_carries_forward_missing_source_candidates(
     assert any(topic.name == "Notifications" for topic in repaired.topic_candidates)
 
 
+def test_consolidation_repair_removes_out_of_group_ids_and_carries_source_lineage() -> None:
+    source = ConsolidatedAnalysisResult(
+        analysis_run_id=RUN_ID,
+        topic_candidates=[
+            TopicCandidate(
+                id="T-SOURCE",
+                analysis_run_id=RUN_ID,
+                name="Offline playback",
+                summary="Downloads fail offline.",
+                review_ids=["R000001", "R000002"],
+                batch_id="B0001",
+            )
+        ],
+        finding_candidates=[
+            FindingCandidate(
+                id="F-SOURCE",
+                analysis_run_id=RUN_ID,
+                topic="Offline playback",
+                title="Downloads fail offline",
+                problem="Downloaded media is unavailable without a network.",
+                summary="Two Reviews report the same problem.",
+                supporting_review_ids=["R000001", "R000002"],
+                source_batch_ids=["B0001"],
+            )
+        ],
+    )
+    invalid = ConsolidatedAnalysisResult(
+        analysis_run_id=RUN_ID,
+        topic_candidates=[
+            TopicCandidate(
+                id="T-MODEL",
+                analysis_run_id=RUN_ID,
+                name="Offline access",
+                summary="Offline access is unreliable.",
+                review_ids=["R000001", "R999999"],
+                batch_id="B9999",
+            )
+        ],
+        finding_candidates=[
+            FindingCandidate(
+                id="F-MODEL",
+                analysis_run_id=RUN_ID,
+                topic="Offline access",
+                title="Offline downloads fail",
+                problem="Downloaded media cannot play offline.",
+                summary="The valid source Review reports failure.",
+                supporting_review_ids=["R000001", "R999999"],
+                source_batch_ids=["B9999"],
+            )
+        ],
+    )
+
+    repaired = repair_consolidation_lineage(
+        invalid,
+        [source],
+        {"R000001": "B0001", "R000002": "B0001"},
+    )
+
+    serialized = repaired.model_dump_json()
+    assert "R999999" not in serialized
+    assert {
+        review_id
+        for candidate in repaired.finding_candidates
+        for review_id in candidate.supporting_review_ids
+    } == {"R000001", "R000002"}
+    assert all(candidate.source_batch_ids == ["B0001"] for candidate in repaired.finding_candidates)
+
+
 def test_multilingual_unknown_domain_and_output_language_propagation(tmp_path: Path) -> None:
     provider = DynamicMockProvider()
     semantic_service = service(tmp_path, provider, batch_size=2)

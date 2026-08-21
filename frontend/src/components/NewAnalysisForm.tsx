@@ -1,7 +1,13 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ApiError, createAppStoreAnalysis, createFileAnalysis, startFullPipeline } from '../api/client'
+import {
+  ApiError,
+  createAppStoreAnalysis,
+  createFileAnalysis,
+  loadWorkoutDemo,
+  startFullPipeline,
+} from '../api/client'
 import type { AnalysisOutputLanguage, AnalysisSource, IngestionResult } from '../types/analysis'
 
 interface NewAnalysisFormProps {
@@ -25,6 +31,7 @@ export function NewAnalysisForm({ onComplete }: NewAnalysisFormProps) {
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<AnalysisFormError | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDemoLoading, setIsDemoLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const selectSource = (nextSource: AnalysisSource) => {
@@ -75,6 +82,22 @@ export function NewAnalysisForm({ onComplete }: NewAnalysisFormProps) {
   const localizedError = error
     ? t(`analysis.errors.${error.code}`, { defaultValue: error.message })
     : null
+
+  const handleDemo = async () => {
+    setError(null)
+    setIsDemoLoading(true)
+    try {
+      onComplete(await loadWorkoutDemo())
+    } catch (caughtError) {
+      if (caughtError instanceof ApiError) {
+        setError({ code: caughtError.code, message: caughtError.message })
+      } else {
+        setError({ code: 'CACHED_DEMO_UNAVAILABLE', message: t('analysis.demo.error') })
+      }
+    } finally {
+      setIsDemoLoading(false)
+    }
+  }
 
   return (
     <form className="rounded-2xl border border-[#d7e3ee] bg-white p-5 sm:p-6" onSubmit={handleSubmit}>
@@ -186,11 +209,21 @@ export function NewAnalysisForm({ onComplete }: NewAnalysisFormProps) {
       <button
         className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#175bd8] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#104ebd] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#175bd8] disabled:cursor-wait disabled:bg-[#8aaad7]"
         data-testid="start-analysis"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isDemoLoading}
         type="submit"
       >
         {isSubmitting ? t('analysis.form.processing') : t('analysis.form.submit')}
       </button>
+      <button
+        className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#b9cce0] bg-white px-4 py-3 text-sm font-semibold text-[#245582] transition-colors hover:border-[#8aaed2] hover:bg-[#f5f9fd] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#175bd8] disabled:cursor-wait disabled:text-[#8295a8]"
+        data-testid="view-cached-demo"
+        disabled={isSubmitting || isDemoLoading}
+        onClick={handleDemo}
+        type="button"
+      >
+        {isDemoLoading ? t('analysis.demo.loading') : t('analysis.demo.button')}
+      </button>
+      <p className="mt-2 text-center text-xs leading-5 text-[#708397]">{t('analysis.demo.hint')}</p>
     </form>
   )
 }

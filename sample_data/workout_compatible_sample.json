@@ -1,0 +1,12 @@
+{
+  "reviews": [
+    {"id":"workout-001","rating":1,"title":"Unexpected paywall","text":"Exercises I used every week are now locked behind a subscription without warning.","version":"7.4","language":"en-US","date":"2026-07-01"},
+    {"id":"workout-002","rating":2,"title":"免费训练变少了","text":"更新以后以前能用的免费训练都要求订阅，进入前也没有说明。","version":"7.4","language":"zh-CN","date":"2026-07-02"},
+    {"id":"workout-003","rating":1,"title":"Ad cannot close","text":"After the long ad finishes there is no close button and I have to restart the app.","version":"7.4","language":"en-US","date":"2026-07-03"},
+    {"id":"workout-004","rating":2,"title":"广告结束后卡住","text":"广告播放完仍然停在广告页，返回按钮也没有反应。","version":"7.4","language":"zh-CN","date":"2026-07-04"},
+    {"id":"workout-005","rating":2,"title":"Knee preference ignored","text":"I selected avoid knees but the plan still gives me squats and jumping lunges.","version":"7.3","language":"en-US","date":"2026-07-05"},
+    {"id":"workout-006","rating":2,"title":"动作限制没有生效","text":"设置避免手腕承重后，课程里还是出现了多个平板支撑动作。","version":"7.3","language":"zh-CN","date":"2026-07-06"},
+    {"id":"workout-007","rating":4,"title":"Useful short sessions","text":"The short routines fit my schedule and the instructions are easy to follow.","version":"7.4","language":"en-US","date":"2026-07-07"},
+    {"id":"workout-008","rating":4,"title":"课程节奏不错","text":"十分钟课程节奏清楚，动作提示也很容易理解。","version":"7.4","language":"zh-CN","date":"2026-07-08"}
+  ]
+}

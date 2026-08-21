@@ -60,7 +60,7 @@ export function HomePage() {
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <LanguageSwitcher />
             <span className="hidden font-mono text-[0.62rem] tracking-[0.08em] text-[#8a9aad] md:inline">
-              {t('header.phase6')}
+              {t('header.phase7')}
             </span>
           </div>
         </div>

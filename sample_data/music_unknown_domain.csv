@@ -1,0 +1,25 @@
+id,rating,title,text,version,language,date
+music-001,1,Downloads disappear,Albums downloaded for a flight disappear after the app refreshes.,8.2,en-US,2026-07-01
+music-002,2,Offline playback fails,Downloaded songs still show a network error in airplane mode.,8.2,en-US,2026-07-02
+music-003,1,无法离线播放,已经下载的歌在地铁里仍然提示需要联网。,8.2,zh-CN,2026-07-03
+music-004,2,Lyrics are late,Synced lyrics stay several seconds behind the vocals.,8.2,en-US,2026-07-04
+music-005,1,歌词不同步,歌词经常比歌曲慢几句，重新打开也没有恢复。,8.2,zh-CN,2026-07-05
+music-006,2,Wrong lyric version,The lyrics are for the studio recording while a live version is playing.,8.1,en-US,2026-07-06
+music-007,1,Collaborative edits vanish,Songs added by friends vanish from our shared playlist.,8.2,en-US,2026-07-07
+music-008,2,共享歌单不同步,朋友添加了歌曲，但我的共享歌单一直看不到修改。,8.2,zh-CN,2026-07-08
+music-009,1,Duplicate playlist edits,Concurrent collaborative edits create duplicate tracks.,8.2,en-US,2026-07-09
+music-010,2,Recommendations repeat,The discovery mix recommends the same artists every day.,8.2,en-US,2026-07-10
+music-011,1,推荐越来越重复,每日推荐连续一周都是相同歌手，没有新音乐。,8.2,zh-CN,2026-07-11
+music-012,2,Dislikes ignored,Disliked tracks keep returning in the recommendation feed.,8.1,en-US,2026-07-12
+music-013,2,Offline queue resets,My downloaded queue resets whenever the app restarts without a connection.,8.1,en-US,2026-07-13
+music-014,1,下载内容会消失,每次更新应用后之前下载的专辑都会从离线列表消失。,8.2,zh-CN,2026-07-14
+music-015,2,Cannot verify downloads,Half the tracks marked downloaded cannot play offline.,8.2,en-US,2026-07-15
+music-016,1,Missing lyrics,Popular songs that had lyrics last month now show lyrics unavailable.,8.2,en-US,2026-07-16
+music-017,2,歌词滚动卡住,进入副歌后歌词滚动会卡住，必须重新打开播放页。,8.2,zh-CN,2026-07-17
+music-018,2,No manual sync,There is no way to report visibly out-of-sync lyrics.,8.1,en-US,2026-07-18
+music-019,2,Cannot identify editor,Shared playlists do not show who removed a track.,8.1,en-US,2026-07-19
+music-020,1,协作修改被覆盖,两个人同时编辑歌单时其中一方的修改会被覆盖。,8.2,zh-CN,2026-07-20
+music-021,2,Invites stop working,New playlist collaboration invites expire immediately.,8.2,en-US,2026-07-21
+music-022,1,Wrong genres,Recommendations ignore the genres I follow and promote unrelated releases.,8.2,en-US,2026-07-22
+music-023,2,不理解收听偏好,我主要听爵士乐但推荐页一直推送无关的流行歌曲。,8.2,zh-CN,2026-07-23
+music-024,1,Discovery feels sponsored,The recommendation shelf repeats promotions instead of learning from my history.,8.2,en-US,2026-07-24

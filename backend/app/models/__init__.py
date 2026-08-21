@@ -33,6 +33,7 @@ from app.models.evidence_result import (
 )
 from app.models.ingestion import (
     AnalysisRunView,
+    CachedDemoMetadata,
     CleaningStatistics,
     IngestionResult,
     ProviderMetadata,
@@ -99,6 +100,7 @@ __all__ = [
     "AnalysisRun",
     "AnalysisOutputLanguage",
     "AnalysisRunView",
+    "CachedDemoMetadata",
     "AnalysisRunStatus",
     "ArtifactValidationStatus",
     "AuditArtifact",

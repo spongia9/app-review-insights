@@ -18,6 +18,7 @@ from app.models import (
 )
 from app.providers.errors import IngestionError
 from app.services import (
+    CachedDemoError,
     EvidenceValidationError,
     EvidenceValidationService,
     FullPipelineError,
@@ -27,6 +28,7 @@ from app.services import (
     ProductPlanningService,
     SemanticAnalysisError,
     SemanticAnalysisService,
+    load_workout_demo,
 )
 from app.services.evidence import evidence_summary
 from app.services.product_planning import product_planning_summary
@@ -149,6 +151,17 @@ async def create_json_run(
         return get_service(request).ingest_json(data, analysis_goal, output_language)
     except IngestionError as error:
         raise_http_error(error)
+
+
+@router.post("/demo/workout", response_model=IngestionResult)
+def load_cached_workout_demo(request: Request) -> IngestionResult:
+    try:
+        return load_workout_demo(get_store(request))
+    except CachedDemoError as error:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": error.code, "message": error.message},
+        ) from error
 
 
 def require_result(analysis_run_id: str, request: Request) -> IngestionResult:

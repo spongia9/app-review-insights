@@ -1,3 +1,4 @@
+from app.services.cached_demo import CachedDemoError, load_workout_demo
 from app.services.ingestion import IngestionService
 from app.services.semantic import SemanticAnalysisError, SemanticAnalysisService
 from app.services.evidence import EvidenceValidationError, EvidenceValidationService
@@ -6,9 +7,11 @@ from app.services.pipeline import FullPipelineError, FullPipelineService
 from app.services.traceability import FinalTraceabilityValidator
 
 __all__ = [
+    "CachedDemoError",
     "EvidenceValidationError",
     "EvidenceValidationService",
     "IngestionService",
+    "load_workout_demo",
     "ProductPlanningError",
     "ProductPlanningService",
     "FullPipelineError",

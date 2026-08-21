@@ -227,39 +227,65 @@ def repair_consolidation_lineage(
     source_units: Sequence[ConsolidatedAnalysisResult],
     review_batch_ids: Dict[str, str],
 ) -> ConsolidatedAnalysisResult:
+    if any(unit.analysis_run_id != consolidated.analysis_run_id for unit in source_units):
+        raise SemanticAnalysisError(
+            "CROSS_RUN_REFERENCE",
+            "Consolidation repair cannot cross AnalysisRun boundaries.",
+        )
     source_topic_review_ids = _candidate_review_ids(source_units, candidate_type="topic")
     source_finding_review_ids = _candidate_review_ids(source_units, candidate_type="finding")
-    allowed_batch_ids = set(review_batch_ids.values())
-    _validate_topic_scope(
-        consolidated.topic_candidates,
-        analysis_run_id=consolidated.analysis_run_id,
-        allowed_review_ids=source_topic_review_ids,
-        allowed_batch_ids=allowed_batch_ids,
-    )
-    _validate_finding_scope(
-        consolidated.finding_candidates,
-        analysis_run_id=consolidated.analysis_run_id,
-        allowed_review_ids=source_finding_review_ids,
-        allowed_batch_ids=allowed_batch_ids,
-    )
 
     topics = []
     for topic in consolidated.topic_candidates:
-        expected_batch_ids = {review_batch_ids[review_id] for review_id in topic.review_ids}
+        if topic.analysis_run_id != consolidated.analysis_run_id:
+            raise SemanticAnalysisError(
+                "CROSS_RUN_REFERENCE",
+                "Consolidation Topic referenced another AnalysisRun.",
+            )
+        allowed_review_ids = [
+            review_id for review_id in topic.review_ids if review_id in source_topic_review_ids
+        ]
+        if not allowed_review_ids:
+            continue
+        expected_batch_ids = {
+            review_batch_ids[review_id] for review_id in allowed_review_ids
+        }
         topics.append(
-            topic
-            if topic.batch_id in expected_batch_ids
-            else topic.model_copy(update={"batch_id": sorted(expected_batch_ids)[0]})
+            topic.model_copy(
+                update={
+                    "review_ids": allowed_review_ids,
+                    "batch_id": (
+                        topic.batch_id
+                        if topic.batch_id in expected_batch_ids
+                        else sorted(expected_batch_ids)[0]
+                    ),
+                }
+            )
         )
     findings = []
     for finding in consolidated.finding_candidates:
+        if finding.analysis_run_id != consolidated.analysis_run_id:
+            raise SemanticAnalysisError(
+                "CROSS_RUN_REFERENCE",
+                "Consolidation Finding Candidate referenced another AnalysisRun.",
+            )
+        allowed_review_ids = [
+            review_id
+            for review_id in finding.supporting_review_ids
+            if review_id in source_finding_review_ids
+        ]
+        if not allowed_review_ids:
+            continue
         expected_batch_ids = sorted(
-            {review_batch_ids[review_id] for review_id in finding.supporting_review_ids}
+            {review_batch_ids[review_id] for review_id in allowed_review_ids}
         )
         findings.append(
-            finding
-            if set(finding.source_batch_ids) == set(expected_batch_ids)
-            else finding.model_copy(update={"source_batch_ids": expected_batch_ids})
+            finding.model_copy(
+                update={
+                    "supporting_review_ids": allowed_review_ids,
+                    "source_batch_ids": expected_batch_ids,
+                }
+            )
         )
 
     missing_topic_ids = source_topic_review_ids - {
@@ -850,10 +876,12 @@ class SemanticAnalysisService:
                     if repair and validation_error.code in {
                         "LINEAGE_LOSS",
                         "DUPLICATE_CANDIDATE_ID",
+                        "INVALID_REVIEW_ID",
+                        "INVALID_BATCH_REFERENCE",
                     }:
                         output = repair(output, validation_error)
                         revisions.append(
-                            f"Deterministic lineage repair applied for {operation}: "
+                            f"Deterministic consolidation repair applied for {operation}: "
                             f"{validation_error.code}."
                         )
                     else:

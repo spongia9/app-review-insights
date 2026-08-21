@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import Field
 
@@ -40,6 +40,17 @@ class CleaningStatistics(RunScopedModel):
     retention_rate: float = Field(ge=0, le=1)
 
 
+class CachedDemoMetadata(DomainModel):
+    """Immutable provenance that prevents an offline artifact looking live."""
+
+    CACHED_DEMO: Literal[True] = True
+    source: str = Field(min_length=1)
+    collection_time: datetime
+    model_provider: str = Field(min_length=1)
+    model_name: str = Field(min_length=1)
+    analysis_time: datetime
+
+
 class IngestionResult(RunScopedModel):
     run: AnalysisRun
     provider: ProviderMetadata
@@ -51,6 +62,7 @@ class IngestionResult(RunScopedModel):
     product_planning: Optional[ProductPlanningResult] = None
     final_traceability: Optional[FinalTraceabilityResult] = None
     audit_events: List[RunAuditEvent] = Field(default_factory=list)
+    cached_demo: Optional[CachedDemoMetadata] = None
 
 
 class AnalysisRunView(RunScopedModel):

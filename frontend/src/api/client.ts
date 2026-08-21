@@ -109,6 +109,13 @@ export async function createFileAnalysis(
   })
 }
 
+export async function loadWorkoutDemo(): Promise<IngestionResult> {
+  return requestIngestion(`${apiBaseUrl}/api/analysis/demo/workout`, {
+    method: 'POST',
+    headers: { Accept: 'application/json' },
+  })
+}
+
 export async function startSemanticAnalysis(
   analysisRunId: string,
   outputLanguage: AnalysisOutputLanguage,

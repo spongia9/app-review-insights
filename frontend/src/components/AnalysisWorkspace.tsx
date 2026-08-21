@@ -179,9 +179,33 @@ export function AnalysisWorkspace({ result }: { result: IngestionResult }) {
     }),
     [findings, planning, topics.length],
   )
+  const displayErrors = runView.run.error_code
+    ? [
+        t(`analysis.semantic.errorCodes.${runView.run.error_code}`, {
+          defaultValue: runView.run.errors[0] ?? runView.run.error_code,
+        }),
+        ...runView.run.errors.slice(1),
+      ]
+    : runView.run.errors
 
   return (
     <section className="mt-8 border-t border-[#d7e3ee] pt-7" data-testid="analysis-workspace">
+      {result.cached_demo?.CACHED_DEMO ? (
+        <div
+          className="mb-5 rounded-xl border border-[#e2c777] bg-[#fff9e8] px-4 py-3 text-sm text-[#6f5416]"
+          data-testid="cached-demo-banner"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <strong>{t('analysis.demo.badge')}</strong>
+            <span className="font-mono text-[0.68rem]">{result.cached_demo.model_provider} · {result.cached_demo.model_name}</span>
+          </div>
+          <p className="mt-1 leading-5">{t('analysis.demo.description')}</p>
+          <p className="mt-1 font-mono text-[0.68rem] text-[#806927]">
+            {t('analysis.demo.collected')}: {new Date(result.cached_demo.collection_time).toLocaleString()}
+            {' · '}{t('analysis.demo.analyzed')}: {new Date(result.cached_demo.analysis_time).toLocaleString()}
+          </p>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -220,7 +244,7 @@ export function AnalysisWorkspace({ result }: { result: IngestionResult }) {
           <div className="mt-3 rounded-xl bg-[#fff0f0] px-4 py-3 text-sm text-[#8e3030]" role="alert">
             <p className="font-semibold">{t('analysis.workspace.pipelineFailed')}</p>
             <ul className="mt-1 list-disc space-y-1 pl-5">
-              {runView.run.errors.map((error) => <li key={error}>{error}</li>)}
+            {displayErrors.map((error) => <li key={error}>{error}</li>)}
             </ul>
           </div>
         ) : null}

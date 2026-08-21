@@ -9,7 +9,8 @@
     "phase3": "Phase 3 · Semantic analysis",
     "phase4": "Phase 4 · Evidence validation",
     "phase5": "Phase 5 · Product planning",
-    "phase6": "Phase 6 · Complete workspace"
+    "phase6": "Phase 6 · Complete workspace",
+    "phase7": "Final delivery build"
   },
   "hero": {
     "eyebrow": "Evidence-grounded product planning",
@@ -109,6 +110,16 @@
       "zh-CN": "Simplified Chinese",
       "en-US": "English"
     },
+    "demo": {
+      "button": "View Demo Analysis",
+      "loading": "Loading demo…",
+      "hint": "No API key required. Loads a clearly labeled cached result without calling the App Store or model.",
+      "badge": "Cached Demo Result",
+      "description": "This packaged historical result is for offline review. It is not a new live collection or model run.",
+      "collected": "Original collection time",
+      "analyzed": "Original analysis time",
+      "error": "The packaged cached demo could not be loaded."
+    },
     "stages": {
       "SEMANTIC_TOPIC_DISCOVERY": "Discovering dynamic topics",
       "FINDING_EXTRACTION": "Extracting Finding Candidates",
@@ -133,6 +144,7 @@
       "resumeHint": "Completed review analysis and Finding Candidates are preserved. Retry resumes from the latest consolidation checkpoint instead of analyzing every review again.",
       "technicalDetails": "View technical details",
       "errorCodes": {
+        "LLM_NOT_CONFIGURED": "Live analysis is not configured. Copy .env.example to the project-root .env and set LLM_API_KEY, or open the cached demo.",
         "LLM_OUTPUT_TRUNCATED": "The model reached the configured output limit before completing the JSON response. Completed stages remain preserved.",
         "LLM_EMPTY_CONTENT": "The model returned empty content. No fallback result was fabricated.",
         "LLM_INVALID_JSON": "The model returned incomplete or malformed JSON.",
@@ -363,6 +375,7 @@
           "rejected_count": "Rejected"
         },
         "hardFailures": "Structural validation failures",
+        "matrixRows": "{{count}} complete traceability paths; scroll within the table.",
         "matrix": {
           "review": "Review",
           "role": "Evidence role",
@@ -437,6 +450,7 @@
       "FILE_TOO_LARGE": "The file exceeds the 10 MiB upload limit.",
       "TOO_MANY_REVIEWS": "The file exceeds the 10,000-review limit.",
       "NO_VALID_REVIEWS": "No valid reviews remained after cleaning.",
+      "CACHED_DEMO_UNAVAILABLE": "The packaged cached demo is missing or invalid.",
       "BACKEND_ERROR": "The backend request failed. Confirm the service is running and try again."
     }
   }

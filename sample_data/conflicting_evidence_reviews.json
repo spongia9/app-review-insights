@@ -1,0 +1,14 @@
+{
+  "reviews": [
+    {"id":"conflict-001","rating":1,"title":"Redesign is confusing","text":"The new navigation hides my saved library and takes more taps than before.","version":"5.0","language":"en-US"},
+    {"id":"conflict-002","rating":2,"title":"Cannot find downloads","text":"Since the redesign I cannot find downloaded items without searching every time.","version":"5.0","language":"en-US"},
+    {"id":"conflict-003","rating":2,"title":"新版导航难用","text":"更新后的导航把收藏入口藏得很深，操作比以前复杂。","version":"5.0","language":"zh-CN"},
+    {"id":"conflict-004","rating":1,"title":"More steps","text":"Basic library actions now require several extra screens.","version":"5.0","language":"en-US"},
+    {"id":"conflict-005","rating":2,"title":"Search replaced navigation","text":"I have to use search because the redesigned tabs are unclear.","version":"5.0","language":"en-US"},
+    {"id":"conflict-006","rating":5,"title":"Redesign is clearer","text":"The new navigation is much clearer and I reach my saved library faster.","version":"5.0","language":"en-US"},
+    {"id":"conflict-007","rating":4,"title":"Fewer taps for me","text":"I can open downloads with fewer taps after the redesign.","version":"5.0","language":"en-US"},
+    {"id":"conflict-008","rating":5,"title":"新版更清楚","text":"新版导航层级更清晰，我能更快找到收藏和下载。","version":"5.0","language":"zh-CN"},
+    {"id":"conflict-009","rating":4,"title":"Good tab layout","text":"The new tabs make the library easier to understand.","version":"5.0","language":"en-US"},
+    {"id":"conflict-010","rating":5,"title":"Easy to learn","text":"The redesigned layout felt natural after a few minutes.","version":"5.0","language":"en-US"}
+  ]
+}

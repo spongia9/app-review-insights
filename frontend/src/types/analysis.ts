@@ -75,6 +75,15 @@ export interface ProviderMetadata {
   storefront_verified: boolean
 }
 
+export interface CachedDemoMetadata {
+  CACHED_DEMO: true
+  source: string
+  collection_time: string
+  model_provider: string
+  model_name: string
+  analysis_time: string
+}
+
 export interface CleaningStatistics {
   analysis_run_id: string
   raw_review_count: number
@@ -103,6 +112,7 @@ export interface IngestionResult {
   product_planning?: unknown
   final_traceability?: unknown
   audit_events?: RunAuditEvent[]
+  cached_demo?: CachedDemoMetadata | null
 }
 
 export interface TopicCandidate {

@@ -24,6 +24,8 @@ build/
 coverage/
 .vite/
 .playwright-cli/
+playwright-report/
+test-results/
 output/playwright/*
 !output/playwright/.gitkeep
 
